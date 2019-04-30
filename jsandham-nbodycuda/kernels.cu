@@ -80,7 +80,13 @@ __global__ void reset_arrays_kernel(int *mutex, float *x, float *y, float *mass,
   
 __global__ void compute_bounding_box_kernel(int *mutex, float *x, float *y, float *left, float *right, float *bottom, float *top, int n)
 {
+	// method computing the bounding box containing all the particles.
+	
 	int index = threadIdx.x + blockDim.x*blockIdx.x;
+
+	// the stride is actually the offset between different particles belonging to the same thread
+	// as there can be not enough threads to have 1 per particle.
+
 	int stride = blockDim.x*gridDim.x;
 	float x_min = x[index];
 	float x_max = x[index];
@@ -93,6 +99,8 @@ __global__ void compute_bounding_box_kernel(int *mutex, float *x, float *y, floa
 	__shared__ float top_cache[blockSize];
 
 
+	// if not enough threads to have one thread per particle
+	// stride is actually the number of threads we have
 	int offset = stride;
 	while(index + offset < n){
 		x_min = fminf(x_min, x[index + offset]);
@@ -107,10 +115,13 @@ __global__ void compute_bounding_box_kernel(int *mutex, float *x, float *y, floa
 	bottom_cache[threadIdx.x] = y_min;
 	top_cache[threadIdx.x] = y_max;
 
+	// here the 4 caches contain the max and min value for horizontal and vertical axis, having iterated on all particles.
 	__syncthreads();
 
 	// assumes blockDim.x is a power of 2!
 	int i = blockDim.x/2;
+
+	// divide space by 2 at each iteration to get minimum value
 	while(i != 0){
 		if(threadIdx.x < i){
 			left_cache[threadIdx.x] = fminf(left_cache[threadIdx.x], left_cache[threadIdx.x + i]);
@@ -122,6 +133,7 @@ __global__ void compute_bounding_box_kernel(int *mutex, float *x, float *y, floa
 		i /= 2;
 	}
 
+	// atomicCAS to ensure that only 1 thread in the warp executes the copy to memory.
 	if(threadIdx.x == 0){
 		while (atomicCAS(mutex, 0 ,1) != 0); // lock
 		*left = fminf(*left, left_cache[0]);
@@ -160,17 +172,21 @@ __global__ void build_tree_kernel(float *x, float *y, float *mass, int *count, i
 
 			temp = 0;
 			childPath = 0;
+			// if the particle is on the left side on the current grid
 			if(x[bodyIndex + offset] < 0.5*(l+r)){
 				childPath += 1;
 				r = 0.5*(l+r);
 			}
+			// else it is on the right
 			else{
 				l = 0.5*(l+r);
 			}
+			// if the child is at the bottom of the current grid
 			if(y[bodyIndex + offset] < 0.5*(b+t)){
 				childPath += 2;
 				t = 0.5*(t+b);
 			}
+			// else it is at the top
 			else{
 				b = 0.5*(t+b);
 			}
