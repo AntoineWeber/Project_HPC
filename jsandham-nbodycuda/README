@@ -1,0 +1,84 @@
+PROJECT STATUS: complete
+
+
+Contained in this directory is code for simulating the n-body problem using the 
+barnes-hut tree algorithm. Visualization uses openGL and loosely follows the samples 
+distributed by Nvidia when downloading the cuda toolkit (for example the particle sample 
+code contained in NVIDIA_CUDA-7.5_Samples/5_Simulations/particles of the cuda toolkit). 
+Currently all visualization is done by the host (i.e. data is copied back to the host at 
+every time step and I do not use cuda opengl interopability). This is because the system I 
+used to develop this code had cuda installed with the "-no-opengl-libs" flag (necessary 
+for systems containing only one cuda capable device).  
+
+The barnes hut cuda code is loosely based on the openCL code by Benjamin Neukom 
+https://github.com/bneukom/gpu-nbody and the paper "An Efficient CUDA Implementation of the 
+Tree-Based Barnes Hut n-Body Algorithm" by Martin Burtscher and Keshav Pingali. Otherwise the 
+code is written by me (James Sandham) and is open source. I can be contacted at 
+jsandham@uwaterloo.ca for questions/comments.
+
+
+*****************************************
+         Dependencies
+*****************************************
+
+This software requires the Nvidia CUDA toolkit installed on a system with a CUDA capable device 
+(gcc must also be installed). Furthermore visualization is done using opengl and in particular 
+uses SFML, the openGL Extension Wrangler Library (GLEW), and openGL Mathematics (GLM).
+
+To install CUDA see https://developer.nvidia.com/cuda-downloads and the CUDA Quick Start Guide. 
+On Ubuntu SFML and GLEW can be installed by typing the following into a terminal:
+
+sudo apt-get install libsfml-dev
+sudo apt-get install libglew-dev
+
+GLM is just a collection of header files that can be downloaded from 
+http://glm.g-truc.net/0.9.8/index.html and whose path must then be included (modify the 
+makefile INCLUDE variable to set the path to the GLM directory).
+
+
+
+*****************************************
+               Compiling
+***************************************** 
+
+Before compiling see notes below. To compile the code simply type in a terminal:
+
+make clean
+make build
+
+
+
+*****************************************
+              Running        
+*****************************************
+
+The code takes a number of optional commandline arguments.
+
+-disk            //specifies that the initial conditions follow a simple disk model (this is the default)
+-plummer         //specifies that the intial conditions should follow a plummer model, otherwise disk model used
+-colliding-disks //specifies that the initial conditions are two simple colliding disks, otherwise disk model used
+-opengl          //specifies that opengl visualization will be performed, if not given no visualization done
+-benchmark       //specifies that time statistics will be output to terminal, if not given no time ouput done
+-debug           //specifies that the debug tests should be run, if not given no tests will be run
+-iterations=<n>  //specifies the number of iterations to perform, if not given defaults to 50 iterations
+-gravity=<n>     //specifies the gravity parameter, if not given defaults to 1.0
+-dampening=<n>   //specifies the velocity dampening parameter, if not given defaults to 1.0
+
+To run the barnes-hut algorithm with opengl visualization, simply type:
+
+./main -barnes-hut -opengl
+
+To run the barnes-hut algorithm with benchmarks for 500 iterations, simply type:
+
+./main -barnes-hut -benchmark -iterations=500
+
+
+
+*****************************************
+             Notes
+*****************************************
+
+Currently you must manually set the number of particles (numbodies) in main.cpp and then ensure that 
+the blockSize variable in kernels.cu and the blockSize and gridSize variables in particle_cuda.cu 
+matches. For example if you set numbodies = 64*64 in main.cpp, then you must also set blockSize = 64 in 
+kernels.cu, and blockSize = 64, gridSize = 64, in particle_cuda.cu. 
