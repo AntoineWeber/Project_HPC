@@ -2,12 +2,14 @@
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
 #include <string.h>
 #include <math.h>
 
 #include "brute_force.h"
 #include "call_kernels.cuh"
 #include <cuda.h>
+#include <cuda_runtime_api.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -21,16 +23,35 @@ int main(int argc, char** argv)
     unsigned int size_particles = N_PARTICLES * 2; // plane coordinates
     unsigned int mem_size_particles = sizeof(float) * size_particles;
 
-    float* d_pos_x,d_pos_y,d_vel_x,d_vel_y,d_acc_x,d_acc_y,d_mass;
-    cudaMalloc((void**) &d_pos_x, mem_size);
-    cudaMalloc((void**) &d_pos_y, mem_size);
-    cudaMalloc((void**) &d_vel_x, mem_size);
-    cudaMalloc((void**) &d_vel_y, mem_size);
-    cudaMalloc((void**) &d_acc_x, mem_size);
-    cudaMalloc((void**) &d_acc_y, mem_size);
-    cudaMalloc((void**) &d_mass, mem_size);
+    float* d_pos_x;
+    float* d_pos_y;
+    float* d_vel_x;
+    float* d_vel_y;
+    float* d_acc_x;
+    float* d_acc_y;
+    float* d_mass;
+
+    cudaMalloc((void**) &d_pos_x, mem_size_particles);
+    cudaMalloc((void**) &d_pos_y, mem_size_particles);
+    cudaMalloc((void**) &d_vel_x, mem_size_particles);
+    cudaMalloc((void**) &d_vel_y, mem_size_particles);
+    cudaMalloc((void**) &d_acc_x, mem_size_particles);
+    cudaMalloc((void**) &d_acc_y, mem_size_particles);
+    cudaMalloc((void**) &d_mass, mem_size_particles);
 
     initializeParticles(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass);
+
+    
+    float *h_pos_x = (float*)malloc(mem_size_particles);
+    cudaMemcpy(h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
+
+    /*
+    for (int i = 0; i<N_PARTICLES; i++)
+    {
+        std::cout << " ";
+    }
+    std::cout << std::endl;
+    */
 
     exit(EXIT_SUCCESS);
 }
