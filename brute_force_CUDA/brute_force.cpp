@@ -31,6 +31,9 @@ int main(int argc, char** argv)
     float* d_acc_y;
     float* d_mass;
 
+    dim3 gridSize(GRID_SIZE);
+    dim3 blockSize(BLOCK_SIZE);
+
     cudaMalloc((void**) &d_pos_x, mem_size_particles);
     cudaMalloc((void**) &d_pos_y, mem_size_particles);
     cudaMalloc((void**) &d_vel_x, mem_size_particles);
@@ -39,19 +42,51 @@ int main(int argc, char** argv)
     cudaMalloc((void**) &d_acc_y, mem_size_particles);
     cudaMalloc((void**) &d_mass, mem_size_particles);
 
-    initializeParticles(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass);
+    cudaEvent_t start;
+    cudaEvent_t stop;
+    float elapsed;
+    cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	cudaEventRecord(start,0);
 
-    
-    float *h_pos_x = (float*)malloc(mem_size_particles);
-    cudaMemcpy(h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
+    initializeParticles(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
 
     /*
-    for (int i = 0; i<N_PARTICLES; i++)
+    float *h_pos_x = (float*)malloc(mem_size_particles);
+    float *post_h_pos_x = (float*)malloc(mem_size_particles);
+    cudaMemcpy(h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
+    */
+
+    for (unsigned int iter=0; iter<ITERATIONS; iter++)
     {
-        std::cout << " ";
+        computeForces(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
+        //cudaMemcpy(post_h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
+    }
+    cudaEventRecord(stop,0);
+	cudaEventSynchronize(stop);
+	cudaEventElapsedTime(&elapsed, start, stop);
+	cudaEventDestroy(start);
+	cudaEventDestroy(stop);
+    
+    std::cout << std::endl;
+    std::cout << "Elapsed time : " << elapsed << " ms" << std::endl;
+    std::cout << std::endl;
+
+    /*
+    for (unsigned int j=0; j<N_PARTICLES; j++)
+    {
+        std::cout << post_h_pos_x[j] - h_pos_x[j] << " ";
     }
     std::cout << std::endl;
     */
+
+    cudaFree(d_pos_x);
+    cudaFree(d_pos_y);
+    cudaFree(d_vel_x);
+    cudaFree(d_vel_y);
+    cudaFree(d_acc_x);
+    cudaFree(d_acc_y);
+    cudaFree(d_mass);
 
     exit(EXIT_SUCCESS);
 }
