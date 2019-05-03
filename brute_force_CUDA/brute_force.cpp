@@ -11,6 +11,16 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
+// CUDA error checking
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Program main : 2D
@@ -34,13 +44,13 @@ int main(int argc, char** argv)
     dim3 gridSize(GRID_SIZE);
     dim3 blockSize(BLOCK_SIZE);
 
-    cudaMalloc((void**) &d_pos_x, mem_size_particles);
-    cudaMalloc((void**) &d_pos_y, mem_size_particles);
-    cudaMalloc((void**) &d_vel_x, mem_size_particles);
-    cudaMalloc((void**) &d_vel_y, mem_size_particles);
-    cudaMalloc((void**) &d_acc_x, mem_size_particles);
-    cudaMalloc((void**) &d_acc_y, mem_size_particles);
-    cudaMalloc((void**) &d_mass, mem_size_particles);
+    gpuErrchk(cudaMalloc((void**) &d_pos_x, mem_size_particles));
+    gpuErrchk(cudaMalloc((void**) &d_pos_y, mem_size_particles));
+    gpuErrchk(cudaMalloc((void**) &d_vel_x, mem_size_particles));
+    gpuErrchk(cudaMalloc((void**) &d_vel_y, mem_size_particles));
+    gpuErrchk(cudaMalloc((void**) &d_acc_x, mem_size_particles));
+    gpuErrchk(cudaMalloc((void**) &d_acc_y, mem_size_particles));
+    gpuErrchk(cudaMalloc((void**) &d_mass, mem_size_particles));
 
 
     Timer t1;
@@ -74,13 +84,13 @@ int main(int argc, char** argv)
     std::cout << std::endl;
     */
 
-    cudaFree(d_pos_x);
-    cudaFree(d_pos_y);
-    cudaFree(d_vel_x);
-    cudaFree(d_vel_y);
-    cudaFree(d_acc_x);
-    cudaFree(d_acc_y);
-    cudaFree(d_mass);
+    gpuErrchk(cudaFree(d_pos_x));
+    gpuErrchk(cudaFree(d_pos_y));
+    gpuErrchk(cudaFree(d_vel_x));
+    gpuErrchk(cudaFree(d_vel_y));
+    gpuErrchk(cudaFree(d_acc_x));
+    gpuErrchk(cudaFree(d_acc_y));
+    gpuErrchk(cudaFree(d_mass));
 
     exit(EXIT_SUCCESS);
 }
