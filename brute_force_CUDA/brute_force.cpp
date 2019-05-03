@@ -65,6 +65,7 @@ int main(int argc, char** argv)
     for (unsigned int iter=0; iter<ITERATIONS; iter++)
     {
         computeForces(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
+        cudaDeviceSynchronize();
         //cudaMemcpy(post_h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
     }
     double elapsed = t1.elapsed();

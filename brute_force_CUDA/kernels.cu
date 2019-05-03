@@ -80,5 +80,4 @@ __global__ void compute_forces(float *x_pos, float *y_pos, float *x_vel, float *
 
         offset+=stride;
     }
-    __syncthreads();
 }
