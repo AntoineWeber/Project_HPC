@@ -42,13 +42,8 @@ int main(int argc, char** argv)
     cudaMalloc((void**) &d_acc_y, mem_size_particles);
     cudaMalloc((void**) &d_mass, mem_size_particles);
 
-    cudaEvent_t start;
-    cudaEvent_t stop;
-    float elapsed;
-    cudaEventCreate(&start);
-	cudaEventCreate(&stop);
-	cudaEventRecord(start,0);
 
+    Timer t1;
     initializeParticles(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
 
     /*
@@ -62,14 +57,13 @@ int main(int argc, char** argv)
         computeForces(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
         //cudaMemcpy(post_h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
     }
-    cudaEventRecord(stop,0);
-	cudaEventSynchronize(stop);
-	cudaEventElapsedTime(&elapsed, start, stop);
-	cudaEventDestroy(start);
-	cudaEventDestroy(stop);
-    
+    double elapsed = t1.elapsed();
+
+
+    // GTX 1070 has a theoretical 6.5 TFLOPS
     std::cout << std::endl;
-    std::cout << "Elapsed time : " << elapsed << " ms" << std::endl;
+    std::cout << "Elapsed time : " << elapsed << " s" << std::endl;
+    std::cout << "computing " << ITERATIONS << " steps with " << N_PARTICLES << " particles." <<std::endl;
     std::cout << std::endl;
 
     /*

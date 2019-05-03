@@ -4,6 +4,6 @@
 *.ptx
 *.cubin
 *.fatbin
-
+*.o
 
 .vscode
