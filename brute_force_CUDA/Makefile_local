@@ -80,6 +80,9 @@ INCLUDES      := -I$(CUDA_INC_PATH) -I. -I.. -I../../common/inc
 #openCL libs
 CL_LIBS=OpenCL
 
+#jsoncpp
+JSON=jsoncpp
+
 
 SRCS=$(wildcard *.c)
 CPP_SRCS=$(wildcard *.cpp)
@@ -90,7 +93,7 @@ EXE=nbody_brute
 #Target Rules
 
 $(EXE):$(OBJS)
-	$(CC) $(INCLUDES) $(OBJS) -L $(CUDA_LIB_PATH) -l$(CL_LIBS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o $(EXE)
+	$(CC) $(INCLUDES) $(OBJS) -L $(CUDA_LIB_PATH) -l$(CL_LIBS) -l$(JSON) $(LDFLAGS) $(EXTRA_LDFLAGS) -o $(EXE)
 
 %.o:%.cpp
 	$(CC) -c $(CFLAGS) $(INCLUDES) $< -o $@

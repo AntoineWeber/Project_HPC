@@ -8,7 +8,7 @@
 #include "brute_force.h"
 
 
-__global__ void initialize_particles(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass)
+__global__ void initialize_particles_uni(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass)
 {
     int i = threadIdx.x + blockIdx.x*blockDim.x;
     int stride = gridDim.x * blockDim.x;
@@ -37,6 +37,40 @@ __global__ void initialize_particles(float *x_pos, float *y_pos, float *x_vel, f
     }
 }
 
+__global__ void initialize_particles_circle(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass)
+{
+    int i = threadIdx.x + blockIdx.x*blockDim.x;
+    int stride = gridDim.x * blockDim.x;
+    int offset = 0;
+
+    // to initialize the cuda rand
+    curandState state;
+    curand_init(clock64(), i, 0, &state);
+
+    while (i + offset < N_PARTICLES)
+    {
+        mass[i] = (float)PARTICLE_MASS;
+
+        float r = R_OFFSET + curand_uniform(&state)*R_MAX;
+        float alpha = curand_uniform(&state)*2*PI;
+
+        x_pos[i] = r*cos(alpha);
+        y_pos[i] = r*sin(alpha);
+
+        // set velocity to 0
+        x_vel[i] = 0.0;
+        y_vel[i] = 0.0;
+
+        // set acceleration to 0
+        x_acc[i] = 0.0;
+        y_acc[i] = 0.0;
+
+        offset += stride;
+    }
+
+}
+
+
 
 __global__ void compute_forces(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass)
 {
@@ -49,14 +83,17 @@ __global__ void compute_forces(float *x_pos, float *y_pos, float *x_vel, float *
     // loop on given particles if not enough threads
     while (i + offset < N_PARTICLES)
     {
-        //printf(" %d ", offset);
         for (int j=0; j<N_PARTICLES; j++)
         {
             if (j != i)
             {
-                // compute forces in x and y
-                fx += (G*mass[i+offset]*mass[j]*(x_pos[j]-x_pos[i+offset]))/(sqrt((x_pos[j]-x_pos[i+offset])*(x_pos[j]-x_pos[i+offset])));
-                fy += (G*mass[i+offset]*mass[j]*(y_pos[j]-y_pos[i+offset]))/(sqrt((y_pos[j]-y_pos[i+offset])*(y_pos[j]-y_pos[i+offset])));
+                float r = sqrt((x_pos[j]-x_pos[i+offset])*(x_pos[j]-x_pos[i+offset]) + (y_pos[j]-y_pos[i+offset])*(y_pos[j]-y_pos[i+offset]));
+                // may result in a division by 0 otherwise
+                if (r > 0.001)
+                {
+                    fx += (G*mass[i+offset]*mass[j]*(x_pos[j]-x_pos[i+offset]))/(sqrt((x_pos[j]-x_pos[i+offset])*(x_pos[j]-x_pos[i+offset])));
+                    fy += (G*mass[i+offset]*mass[j]*(y_pos[j]-y_pos[i+offset]))/(sqrt((y_pos[j]-y_pos[i+offset])*(y_pos[j]-y_pos[i+offset])));
+                }
             }
         }
 

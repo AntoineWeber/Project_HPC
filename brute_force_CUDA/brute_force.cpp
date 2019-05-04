@@ -1,11 +1,5 @@
 
 // includes, system
-#include <stdlib.h>
-#include <stdio.h>
-#include <iostream>
-#include <string.h>
-#include <math.h>
-
 #include "brute_force.h"
 #include "call_kernels.cuh"
 #include <cuda.h>
@@ -27,6 +21,13 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 ////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
+    // initialize time for TTS (time to solution)
+    Timer t1;
+
+    // define grid and block size
+    dim3 gridSize(GRID_SIZE);
+    dim3 blockSize(BLOCK_SIZE);
+
     initiateDevice();
 
     // allocate memory for the particle array
@@ -41,9 +42,6 @@ int main(int argc, char** argv)
     float* d_acc_y;
     float* d_mass;
 
-    dim3 gridSize(GRID_SIZE);
-    dim3 blockSize(BLOCK_SIZE);
-
     gpuErrchk(cudaMalloc((void**) &d_pos_x, mem_size_particles));
     gpuErrchk(cudaMalloc((void**) &d_pos_y, mem_size_particles));
     gpuErrchk(cudaMalloc((void**) &d_vel_x, mem_size_particles));
@@ -52,21 +50,34 @@ int main(int argc, char** argv)
     gpuErrchk(cudaMalloc((void**) &d_acc_y, mem_size_particles));
     gpuErrchk(cudaMalloc((void**) &d_mass, mem_size_particles));
 
+    //initializeParticlesUni(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
+    initializeParticlesCircle(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
 
-    Timer t1;
-    initializeParticles(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
+    // used for output saving
+    #ifdef SAVE
+        float *h_pos_x = (float*)malloc(mem_size_particles);
+        float *h_pos_y = (float*)malloc(mem_size_particles);
+        std::vector<Position> output(N_PARTICLES);
 
-    /*
-    float *h_pos_x = (float*)malloc(mem_size_particles);
-    float *post_h_pos_x = (float*)malloc(mem_size_particles);
-    cudaMemcpy(h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
-    */
+        //open file
+        std::ofstream myFile("trajectories.txt");
+    #endif
 
     for (unsigned int iter=0; iter<ITERATIONS; iter++)
     {
         computeForces(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
         cudaDeviceSynchronize();
-        //cudaMemcpy(post_h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
+
+        #ifdef SAVE
+            cudaMemcpy(h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
+            cudaMemcpy(h_pos_y, d_pos_y, mem_size_particles, cudaMemcpyDeviceToHost);
+
+            output = fillArray(h_pos_x, h_pos_y);
+            for(std::vector<Position>::const_iterator i = output.begin(); i != output.end(); ++i)
+            {
+                myFile << (*i).x << " " << (*i).y << "\n";
+            }
+        #endif
     }
     double elapsed = t1.elapsed();
 
@@ -80,7 +91,7 @@ int main(int argc, char** argv)
     /*
     for (unsigned int j=0; j<N_PARTICLES; j++)
     {
-        std::cout << post_h_pos_x[j] - h_pos_x[j] << " ";
+        std::cout << h_pos_x[j] << " ";
     }
     std::cout << std::endl;
     */
@@ -122,4 +133,15 @@ void initiateDevice()
     {
         printf("GPU Device %d: \"%s\" with compute capability %d.%d\n\n", devID, deviceProp.name, deviceProp.major, deviceProp.minor);
     }
+}
+
+std::vector<Position> fillArray(float *pos_x, float *pos_y)
+{
+    std::vector<Position> output(N_PARTICLES);
+    for (int i=0; i<N_PARTICLES; i++)
+    {
+        output[i].x = pos_x[i];
+        output[i].y = pos_y[i];
+    }
+    return output;
 }

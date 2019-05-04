@@ -464,6 +464,8 @@ void BarnesHutParticleSystem::diskModel(float *mass, float *x, float* y, float *
 	std::uniform_real_distribution<float> distribution(1.5, 12.0);
 	std::uniform_real_distribution<float> distribution_theta(0.0, 2 * pi);
 
+	std::uniform_real_distribution<float> square(-5.0, 5.0);
+
 	// loop through all particles
 	for (int i = 0; i < n; i++){
 		float theta = distribution_theta(generator);
@@ -477,8 +479,10 @@ void BarnesHutParticleSystem::diskModel(float *mass, float *x, float* y, float *
 		}*/
 		//else{
 			mass[i] = 1.0;
-			x[i] = r*cos(theta);
-			y[i] = r*sin(theta);
+			//x[i] = r*cos(theta);
+			//y[i] = r*sin(theta);
+			x[i] = square(generator);
+			y[i] = square(generator);
 		//}
 
 
