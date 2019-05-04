@@ -83,12 +83,14 @@ __global__ void compute_forces(float *x_pos, float *y_pos, float *x_vel, float *
     // loop on given particles if not enough threads
     while (i + offset < N_PARTICLES)
     {
+        #pragma unroll
         for (int j=0; j<N_PARTICLES; j++)
         {
             if (j != i)
             {
                 float r = sqrt((x_pos[j]-x_pos[i+offset])*(x_pos[j]-x_pos[i+offset]) + (y_pos[j]-y_pos[i+offset])*(y_pos[j]-y_pos[i+offset]));
                 // may result in a division by 0 otherwise
+                // should do something at that point but not sure how to handle it
                 if (r > 0.001)
                 {
                     fx += (G*mass[i+offset]*mass[j]*(x_pos[j]-x_pos[i+offset]))/(sqrt((x_pos[j]-x_pos[i+offset])*(x_pos[j]-x_pos[i+offset])));

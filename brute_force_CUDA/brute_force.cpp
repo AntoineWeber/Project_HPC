@@ -63,6 +63,9 @@ int main(int argc, char** argv)
         std::ofstream myFile("trajectories.txt");
     #endif
 
+    double elapsed_ini = t1.elapsed();
+    t1.reset();
+
     for (unsigned int iter=0; iter<ITERATIONS; iter++)
     {
         computeForces(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
@@ -79,12 +82,13 @@ int main(int argc, char** argv)
             }
         #endif
     }
-    double elapsed = t1.elapsed();
+    double elapsed_compute = t1.elapsed();
 
 
     // GTX 1070 has a theoretical 6.5 TFLOPS
     std::cout << std::endl;
-    std::cout << "Elapsed time : " << elapsed << " s" << std::endl;
+    std::cout << "Elapsed time for initialization : " << elapsed_ini << " s" << std::endl;
+    std::cout << "Elapsed time for computation    : " << elapsed_compute << " s" << std::endl;
     std::cout << "computing " << ITERATIONS << " steps with " << N_PARTICLES << " particles." <<std::endl;
     std::cout << std::endl;
 
