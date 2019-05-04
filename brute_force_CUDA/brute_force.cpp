@@ -135,6 +135,7 @@ void initiateDevice()
     }
 }
 
+#ifdef SAVE
 std::vector<Position> fillArray(float *pos_x, float *pos_y)
 {
     std::vector<Position> output(N_PARTICLES);
@@ -145,3 +146,4 @@ std::vector<Position> fillArray(float *pos_x, float *pos_y)
     }
     return output;
 }
+#endif

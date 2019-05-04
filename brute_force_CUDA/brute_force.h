@@ -49,8 +49,10 @@ struct Position
 };
 
 void initiateDevice();
+
+#ifdef SAVE
 std::vector<Position> fillArray(float *pos_x, float *pos_y);
-void writeToFile(std::vector<Position> output);
+#endif
 
 #endif // _BRUTE_FORCE_H_
 
