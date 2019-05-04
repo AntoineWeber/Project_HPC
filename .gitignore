@@ -5,5 +5,11 @@
 *.cubin
 *.fatbin
 *.o
+*.ipynb_checkpoints
+
+nbody_brute
+main
+
+
 
 .vscode
