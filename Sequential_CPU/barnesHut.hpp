@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include <random>
+#include <limits>
 
 #define N_ITERATIONS 100
 #define N_PARTICULES 1024
@@ -19,6 +20,7 @@ struct QuadTree
 
         std::vector<QuadTree*> m_children;
         QuadTree();
+        void quadtreeReset();
 
 };
 
@@ -33,9 +35,12 @@ class Particles : QuadTree
         std::vector<float> m_ay;
         std::vector<float> m_mass;
 
+        float m_x_min, m_x_max, m_y_min, m_y_max;
+
     public:
         Particles();
         void initialize(std::string pattern);
         void resetTree();
+        void computeBoundingBox();
         void buildTree();
 };

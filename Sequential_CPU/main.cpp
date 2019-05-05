@@ -17,6 +17,7 @@ int main(int argc, char** argv)
     for (unsigned int i=0; i<N_ITERATIONS; i++)
     {
         allParticles.resetTree();
+        allParticles.computeBoundingBox();
         allParticles.buildTree();
     }
 

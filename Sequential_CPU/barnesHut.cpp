@@ -7,6 +7,18 @@ QuadTree::QuadTree()
     m_x_center = 0;
     m_y_center = 0;
     hasChildren = false;
+}
+
+void QuadTree::quadtreeReset()
+{
+    for (unsigned int i=0; i<m_children.size(); i++)
+    {
+        m_children[i]->quadtreeReset();
+        delete m_children[i];
+    }
+    m_children.clear();
+    hasChildren = false;
+}
 
 Particles::Particles()
 {
@@ -17,6 +29,11 @@ Particles::Particles()
     m_ax.reserve(N_PARTICULES);
     m_ay.reserve(N_PARTICULES);
     m_mass.reserve(N_PARTICULES);
+
+    m_x_min = std::numeric_limits<float>::infinity();
+    m_x_max = -std::numeric_limits<float>::infinity();
+    m_y_min = std::numeric_limits<float>::infinity();
+    m_y_max = -std::numeric_limits<float>::infinity();
 }
 
 void Particles::initialize(std::string pattern)
@@ -45,14 +62,34 @@ void Particles::initialize(std::string pattern)
 
 void Particles::resetTree()
 {
-    m_children.clear();
-    for (unsigned int i=0; i<m_children.size(); i++)
+    QuadTree::quadtreeReset();
+}
+
+void Particles::computeBoundingBox()
+{
+    for (unsigned int i=0; i<N_PARTICULES; i++)
     {
-        m_children[i]->Reset();
+        if (m_x[i] < m_x_min)
+        {
+            m_x_min = m_x[i];
+        }
+        else if (m_x[i] > m_x_max)
+        {
+            m_x_max = m_x[i];
+        }
+        
+        if (m_y[i] < m_y_min)
+        {
+            m_y_min = m_y[i];
+        }
+        else if (m_y[i] > m_y_max)
+        {
+            m_y_max = m_y[i];
+        }
     }
 }
 
 void Particles::buildTree()
 {
-
+    // that's not trivial
 }
