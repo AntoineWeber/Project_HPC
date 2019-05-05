@@ -6,7 +6,9 @@
 *.fatbin
 *.o
 *.ipynb_checkpoints
-
+*.cmake
+CMakeCache.txt
+Makefile
 nbody_brute
 main
 
