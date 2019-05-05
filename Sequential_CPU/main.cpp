@@ -11,7 +11,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
-    quadTree tree;
+    Particles allParticles;
+    allParticles.initialize("uniform");
+
+    for (unsigned int i=0; i<N_ITERATIONS; i++)
+    {
+        allParticles.resetTree();
+        allParticles.buildTree();
+    }
 
     return 1;
 }
+
+
