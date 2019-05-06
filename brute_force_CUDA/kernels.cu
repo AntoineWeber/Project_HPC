@@ -8,7 +8,7 @@
 #include "brute_force.h"
 
 
-__global__ void initialize_particles_uni(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass)
+__global__ void initialize_particles_uni(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass, bool *far_space)
 {
     int i = threadIdx.x + blockIdx.x*blockDim.x;
     int stride = gridDim.x * blockDim.x;
@@ -21,6 +21,7 @@ __global__ void initialize_particles_uni(float *x_pos, float *y_pos, float *x_ve
     while (i + offset < N_PARTICLES)
     {
         mass[i] = (float)PARTICLE_MASS;
+        far_space[i] = false;
 
         x_pos[i] = curand_uniform(&state)*GRID_MAX*2 + GRID_MIN;
         y_pos[i] = curand_uniform(&state)*GRID_MAX*2 + GRID_MIN;
@@ -37,7 +38,7 @@ __global__ void initialize_particles_uni(float *x_pos, float *y_pos, float *x_ve
     }
 }
 
-__global__ void initialize_particles_circle(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass)
+__global__ void initialize_particles_circle(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass, bool *far_space)
 {
     int i = threadIdx.x + blockIdx.x*blockDim.x;
     int stride = gridDim.x * blockDim.x;
@@ -50,6 +51,7 @@ __global__ void initialize_particles_circle(float *x_pos, float *y_pos, float *x
     while (i + offset < N_PARTICLES)
     {
         mass[i] = (float)PARTICLE_MASS;
+        far_space[i] = false;
 
         float r = R_OFFSET + curand_uniform(&state)*R_MAX;
         float alpha = curand_uniform(&state)*2*PI;
@@ -72,7 +74,7 @@ __global__ void initialize_particles_circle(float *x_pos, float *y_pos, float *x
 
 
 
-__global__ void compute_forces(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass)
+__global__ void compute_forces(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass, bool *far_space)
 {
     int i = threadIdx.x + blockIdx.x*blockDim.x;
     int stride = gridDim.x * blockDim.x;
@@ -83,18 +85,28 @@ __global__ void compute_forces(float *x_pos, float *y_pos, float *x_vel, float *
     // loop on given particles if not enough threads
     while (i + offset < N_PARTICLES)
     {
-        #pragma unroll
+        // if outside the defined box, stop taking this particle into consideration
+        if (x_pos[i] > GRID_MAX || x_pos[i] < GRID_MIN || y_pos[i] > GRID_MAX || y_pos[i] < GRID_MIN)
+        {
+            far_space[i] = true;
+            continue;
+        }
+        //#pragma unroll
         for (int j=0; j<N_PARTICLES; j++)
         {
-            if (j != i)
+            if (j != i && far_space[i] == false)
             {
                 float r = sqrt((x_pos[j]-x_pos[i+offset])*(x_pos[j]-x_pos[i+offset]) + (y_pos[j]-y_pos[i+offset])*(y_pos[j]-y_pos[i+offset]));
-                // may result in a division by 0 otherwise
-                // should do something at that point but not sure how to handle it
-                if (r > 0.001)
+                // if radius smaller than epsilon, fix radius = epsilon for computation.
+                if (r > EPSILON)
                 {
-                    fx += (G*mass[i+offset]*mass[j]*(x_pos[j]-x_pos[i+offset]))/(sqrt((x_pos[j]-x_pos[i+offset])*(x_pos[j]-x_pos[i+offset])));
-                    fy += (G*mass[i+offset]*mass[j]*(y_pos[j]-y_pos[i+offset]))/(sqrt((y_pos[j]-y_pos[i+offset])*(y_pos[j]-y_pos[i+offset])));
+                    fx += (G*mass[i+offset]*mass[j]*(x_pos[j]-x_pos[i+offset]))/r;
+                    fy += (G*mass[i+offset]*mass[j]*(y_pos[j]-y_pos[i+offset]))/r;
+                }
+                else
+                {
+                    fx += (G*mass[i+offset]*mass[j]*(x_pos[j]-x_pos[i+offset]))/EPSILON;
+                    fy += (G*mass[i+offset]*mass[j]*(y_pos[j]-y_pos[i+offset]))/EPSILON;
                 }
             }
         }

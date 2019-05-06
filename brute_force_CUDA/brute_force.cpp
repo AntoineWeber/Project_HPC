@@ -41,6 +41,7 @@ int main(int argc, char** argv)
     float* d_acc_x;
     float* d_acc_y;
     float* d_mass;
+    bool* d_far_space;
 
     gpuErrchk(cudaMalloc((void**) &d_pos_x, mem_size_particles));
     gpuErrchk(cudaMalloc((void**) &d_pos_y, mem_size_particles));
@@ -49,9 +50,10 @@ int main(int argc, char** argv)
     gpuErrchk(cudaMalloc((void**) &d_acc_x, mem_size_particles));
     gpuErrchk(cudaMalloc((void**) &d_acc_y, mem_size_particles));
     gpuErrchk(cudaMalloc((void**) &d_mass, mem_size_particles));
+    gpuErrchk(cudaMalloc((void**) &d_far_space, mem_size_particles));
 
-    //initializeParticlesUni(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
-    initializeParticlesCircle(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
+    //initializeParticlesUni(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, d_far_space, gridSize, blockSize);
+    initializeParticlesCircle(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, d_far_space, gridSize, blockSize);
 
     // used for output saving
     #ifdef SAVE
@@ -68,7 +70,7 @@ int main(int argc, char** argv)
 
     for (unsigned int iter=0; iter<ITERATIONS; iter++)
     {
-        computeForces(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
+        computeForces(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, d_far_space, gridSize, blockSize);
         cudaDeviceSynchronize();
 
         #ifdef SAVE

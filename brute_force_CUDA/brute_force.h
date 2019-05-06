@@ -19,6 +19,8 @@
 #define ITERATIONS 100
 #define PI 3.14159265
 
+#define EPSILON 0.001
+
 #include <chrono>
 #include <iostream>
 #include <fstream>
