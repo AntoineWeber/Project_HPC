@@ -5,21 +5,22 @@
 //#define SAVE true
 
 #define N_PARTICLES 2048
-#define GRID_SIZE 16
-#define BLOCK_SIZE 16
+#define GRID_SIZE 32
+#define BLOCK_SIZE 32
 
 #define GRID_MAX 5
 #define GRID_MIN -GRID_MAX
 #define R_MAX 7
 #define R_OFFSET 3
 
-#define PARTICLE_MASS 100
 #define G 6.67408e-11
+#define PARTICLE_MASS 100
 #define TIMESTEP 100
 #define ITERATIONS 100
-#define PI 3.14159265
-
 #define EPSILON 0.001
+
+#define SIMU_BOUND_X 20
+#define SIMU_BOUND_Y 20
 
 #include <chrono>
 #include <iostream>
@@ -47,7 +48,7 @@ private:
 
 struct Position
 {
-    double x,y;
+    float x,y;
 };
 
 void initiateDevice();

@@ -31,7 +31,7 @@ int main(int argc, char** argv)
     initiateDevice();
 
     // allocate memory for the particle array
-    unsigned int size_particles = N_PARTICLES * 2; // plane coordinates
+    unsigned int size_particles = N_PARTICLES; // plane coordinates
     unsigned int mem_size_particles = sizeof(float) * size_particles;
 
     float* d_pos_x;
@@ -41,7 +41,6 @@ int main(int argc, char** argv)
     float* d_acc_x;
     float* d_acc_y;
     float* d_mass;
-    bool* d_far_space;
 
     gpuErrchk(cudaMalloc((void**) &d_pos_x, mem_size_particles));
     gpuErrchk(cudaMalloc((void**) &d_pos_y, mem_size_particles));
@@ -50,10 +49,9 @@ int main(int argc, char** argv)
     gpuErrchk(cudaMalloc((void**) &d_acc_x, mem_size_particles));
     gpuErrchk(cudaMalloc((void**) &d_acc_y, mem_size_particles));
     gpuErrchk(cudaMalloc((void**) &d_mass, mem_size_particles));
-    gpuErrchk(cudaMalloc((void**) &d_far_space, mem_size_particles));
 
-    //initializeParticlesUni(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, d_far_space, gridSize, blockSize);
-    initializeParticlesCircle(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, d_far_space, gridSize, blockSize);
+    //initializeParticlesUni(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
+    initializeParticlesCircle(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
 
     // used for output saving
     #ifdef SAVE
@@ -63,6 +61,15 @@ int main(int argc, char** argv)
 
         //open file
         std::ofstream myFile("trajectories.txt");
+
+        cudaMemcpy(h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
+        cudaMemcpy(h_pos_y, d_pos_y, mem_size_particles, cudaMemcpyDeviceToHost);
+
+        output = fillArray(h_pos_x, h_pos_y);
+        for(std::vector<Position>::const_iterator i = output.begin(); i != output.end(); ++i)
+        {
+            myFile << (*i).x << " " << (*i).y << "\n";
+        }
     #endif
 
     double elapsed_ini = t1.elapsed();
@@ -70,9 +77,8 @@ int main(int argc, char** argv)
 
     for (unsigned int iter=0; iter<ITERATIONS; iter++)
     {
-        computeForces(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, d_far_space, gridSize, blockSize);
+        computeForces(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
         cudaDeviceSynchronize();
-
         #ifdef SAVE
             cudaMemcpy(h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
             cudaMemcpy(h_pos_y, d_pos_y, mem_size_particles, cudaMemcpyDeviceToHost);
