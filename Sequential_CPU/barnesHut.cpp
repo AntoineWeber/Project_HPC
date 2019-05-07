@@ -99,40 +99,77 @@ void Particles::buildTree()
 {
     // 0:NW   1:NE  2:SW    3:SE  
     int quadrant;
-    
+    bool done = false;
+    float l = m_x_min;
+    float r = m_x_max;
+    float t = m_y_max;
+    float d = m_y_min;
+
+    // how to get the instance of the herited class ???
+    QuadTree *curr_node = &QuadTree::QuadTree;
+
     for(unsigned int i=0; i<N_PARTICULES; i++)
     {
-        //locate the particle
-        if (m_x[i] < (m_x_min + m_x_max)/2)
+        // first update state of root node
+        m_x_center += m_x[i]*m_mass[i] / m_av_mass;
+        m_y_center += m_y[i]*m_mass[i] / m_av_mass;
+        m_x_center = m_x_center * m_av_mass / (m_av_mass + m_mass[i]);
+        m_y_center = m_y_center * m_av_mass / (m_av_mass + m_mass[i]);
+        m_av_mass += m_mass[i];
+        hasChildren = true;
+
+        done = false;
+        while(!done)
         {
-            if (m_y[i] > (m_y_min + m_y_max)/2)
+            //locate the particle
+            if (m_x[i] < (l+r)/2)
             {
-                quadrant = 0; 
+                if (m_y[i] > (t+d)/2)
+                {
+                    quadrant = 0; 
+                    r = (l+r)/2;
+                    d = (t+d)/2;
+                }
+                else if (m_y[i] < (t+d)/2)
+                {
+                    quadrant = 2;
+                    r = (l+r)/2;
+                    t = (t+d)/2;
+                }
             }
-            else if (m_y[i] < (m_y_min + m_y_max)/2)
+            else if (m_x[i] > (l+r)/2)
             {
-                quadrant = 2;
-            }
-        }
-        else if (m_x[i] > (m_x_min + m_x_max)/2)
-        {
-            if (m_y[i] > (m_y_min + m_y_max)/2)
-            {
-                quadrant = 1; 
-            }
-            else if (m_y[i] < (m_y_min + m_y_max)/2)
-            {
-                quadrant = 3;
+                if (m_y[i] > (t+d)/2)
+                {
+                    quadrant = 1;
+                    l = (l+r)/2;
+                    d = (t+d)/2;
+                }
+                else if (m_y[i] < (t+d)/2)
+                {
+                    quadrant = 3;
+                    l = (l+r)/2;
+                    t = (t+d)/2;
+                }
+
             }
 
+            // if no child at this node
+            if (m_children[quadrant] == nullptr)
+            {
+                m_children[quadrant] = new QuadTree();
+                m_children[quadrant]->m_av_mass = m_mass[i];
+                m_children[quadrant]->m_x_center = m_x[i];
+                m_children[quadrant]->m_y_center = m_y[i];
+                done = true;
+            }
+
+            else
+            {
+                curr_node = m_children[quadrant];
+            }
+            
         }
 
-        // if no child at this node
-        if (m_children[quadrant] == nullptr)
-        {
-
-        }
-        
-        exit(0);
     }
 }

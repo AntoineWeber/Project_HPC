@@ -13,11 +13,12 @@
 
 class QuadTree
 {
-    protected:
+    public:
         float m_av_mass;
         float m_x_center;
         float m_y_center;
         bool hasChildren;
+        
 
         std::vector<QuadTree*> m_children;
         QuadTree();
