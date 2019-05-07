@@ -9,8 +9,9 @@
 
 #define N_ITERATIONS 100
 #define N_PARTICULES 1024
+#define CHILD 4
 
-struct QuadTree
+class QuadTree
 {
     protected:
         float m_av_mass;

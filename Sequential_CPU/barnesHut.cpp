@@ -7,6 +7,11 @@ QuadTree::QuadTree()
     m_x_center = 0;
     m_y_center = 0;
     hasChildren = false;
+    m_children.reserve(CHILD);
+    for (unsigned int i=0; i<CHILD; i++)
+    {
+        m_children[i] = nullptr;
+    }
 }
 
 void QuadTree::quadtreeReset()
@@ -65,6 +70,7 @@ void Particles::resetTree()
     QuadTree::quadtreeReset();
 }
 
+// might get rid of this function if considering a fixed box and everything outside is "far space"
 void Particles::computeBoundingBox()
 {
     for (unsigned int i=0; i<N_PARTICULES; i++)
@@ -91,5 +97,42 @@ void Particles::computeBoundingBox()
 
 void Particles::buildTree()
 {
-    // that's not trivial
+    // 0:NW   1:NE  2:SW    3:SE  
+    int quadrant;
+    
+    for(unsigned int i=0; i<N_PARTICULES; i++)
+    {
+        //locate the particle
+        if (m_x[i] < (m_x_min + m_x_max)/2)
+        {
+            if (m_y[i] > (m_y_min + m_y_max)/2)
+            {
+                quadrant = 0; 
+            }
+            else if (m_y[i] < (m_y_min + m_y_max)/2)
+            {
+                quadrant = 2;
+            }
+        }
+        else if (m_x[i] > (m_x_min + m_x_max)/2)
+        {
+            if (m_y[i] > (m_y_min + m_y_max)/2)
+            {
+                quadrant = 1; 
+            }
+            else if (m_y[i] < (m_y_min + m_y_max)/2)
+            {
+                quadrant = 3;
+            }
+
+        }
+
+        // if no child at this node
+        if (m_children[quadrant] == nullptr)
+        {
+
+        }
+        
+        exit(0);
+    }
 }
