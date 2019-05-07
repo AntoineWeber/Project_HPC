@@ -26,7 +26,7 @@ class QuadTree
 
 };
 
-class Particles : QuadTree
+class Particles
 {
     private:
         std::vector<float> m_x;
@@ -36,6 +36,8 @@ class Particles : QuadTree
         std::vector<float> m_ax;
         std::vector<float> m_ay;
         std::vector<float> m_mass;
+
+        QuadTree m_tree;
 
         float m_x_min, m_x_max, m_y_min, m_y_max;
 

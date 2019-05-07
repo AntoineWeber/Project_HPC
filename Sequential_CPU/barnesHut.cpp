@@ -67,7 +67,7 @@ void Particles::initialize(std::string pattern)
 
 void Particles::resetTree()
 {
-    QuadTree::quadtreeReset();
+    m_tree.quadtreeReset();
 }
 
 // might get rid of this function if considering a fixed box and everything outside is "far space"
@@ -105,20 +105,20 @@ void Particles::buildTree()
     float t = m_y_max;
     float d = m_y_min;
 
-    // how to get the instance of the herited class ???
-    QuadTree *curr_node = &QuadTree::QuadTree;
+    QuadTree *curr_node = &m_tree;
 
     for(unsigned int i=0; i<N_PARTICULES; i++)
     {
-        // first update state of root node
-        m_x_center += m_x[i]*m_mass[i] / m_av_mass;
-        m_y_center += m_y[i]*m_mass[i] / m_av_mass;
-        m_x_center = m_x_center * m_av_mass / (m_av_mass + m_mass[i]);
-        m_y_center = m_y_center * m_av_mass / (m_av_mass + m_mass[i]);
-        m_av_mass += m_mass[i];
-        hasChildren = true;
+        // first update the current node with the particle information
+        curr_node->m_x_center += m_x[i]*m_mass[i] / curr_node->m_av_mass;
+        curr_node->m_y_center += m_y[i]*m_mass[i] / m_tree.m_av_mass;
+        curr_node->m_x_center = curr_node->m_x_center * curr_node->m_av_mass / (curr_node->m_av_mass + m_mass[i]);
+        curr_node->m_y_center = curr_node->m_y_center * curr_node->m_av_mass / (curr_node->m_av_mass + m_mass[i]);
+        curr_node->m_av_mass += m_mass[i];
+        curr_node->hasChildren = true;
 
         done = false;
+        // descend along the tree until found the right branch
         while(!done)
         {
             //locate the particle
@@ -154,19 +154,28 @@ void Particles::buildTree()
 
             }
 
-            // if no child at this node
-            if (m_children[quadrant] == nullptr)
+            // if no child at this node, update it
+            if (curr_node->m_children[quadrant] == nullptr)
             {
-                m_children[quadrant] = new QuadTree();
-                m_children[quadrant]->m_av_mass = m_mass[i];
-                m_children[quadrant]->m_x_center = m_x[i];
-                m_children[quadrant]->m_y_center = m_y[i];
+                curr_node->m_children[quadrant] = new QuadTree();
+                curr_node->m_children[quadrant]->m_av_mass = m_mass[i];
+                curr_node->m_children[quadrant]->m_x_center = m_x[i];
+                curr_node->m_children[quadrant]->m_y_center = m_y[i];
                 done = true;
             }
 
             else
             {
-                curr_node = m_children[quadrant];
+                // if leaf already exists, update it
+                curr_node = curr_node->m_children[quadrant];
+                /*
+                curr_node->m_x_center += m_x[i]*m_mass[i] / curr_node->m_av_mass;
+                curr_node->m_y_center += m_y[i]*m_mass[i] / m_tree.m_av_mass;
+                curr_node->m_x_center = curr_node->m_x_center * curr_node->m_av_mass / (curr_node->m_av_mass + m_mass[i]);
+                curr_node->m_y_center = curr_node->m_y_center * curr_node->m_av_mass / (curr_node->m_av_mass + m_mass[i]);
+                curr_node->m_av_mass += m_mass[i];
+                curr_node->hasChildren = true;
+                */
             }
             
         }
