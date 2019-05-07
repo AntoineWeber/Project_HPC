@@ -105,10 +105,13 @@ void Particles::buildTree()
     float t = m_y_max;
     float d = m_y_min;
 
-    QuadTree *curr_node = &m_tree;
+    QuadTree *curr_node;
 
     for(unsigned int i=0; i<N_PARTICULES; i++)
     {
+        // pointer points to root
+        curr_node = &m_tree;
+        
         // first update the current node with the particle information
         curr_node->m_x_center += m_x[i]*m_mass[i] / curr_node->m_av_mass;
         curr_node->m_y_center += m_y[i]*m_mass[i] / m_tree.m_av_mass;
