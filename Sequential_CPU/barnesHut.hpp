@@ -11,6 +11,12 @@
 #define N_PARTICULES 1024
 #define CHILD 4
 
+struct BoxLimits
+{
+    float left,right,top,bottom;
+    int quadrant;
+};
+
 class QuadTree
 {
     public:
@@ -40,6 +46,10 @@ class Particles
         QuadTree m_tree;
 
         float m_x_min, m_x_max, m_y_min, m_y_max;
+
+        void computePosition(float x, float y, BoxLimits &limits, bool updateLimits);
+        void createNode(QuadTree *curr_node, int quadrant, float mass, float x, float y);
+        void addBodyToNode(QuadTree *curr_node, float mass, float x, float y);
 
     public:
         Particles();

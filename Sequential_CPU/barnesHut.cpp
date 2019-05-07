@@ -98,90 +98,153 @@ void Particles::computeBoundingBox()
 void Particles::buildTree()
 {
     // 0:NW   1:NE  2:SW    3:SE  
-    int quadrant;
-    bool done = false;
-    float l = m_x_min;
-    float r = m_x_max;
-    float t = m_y_max;
-    float d = m_y_min;
 
+    int quadrant;
+    int quadrant_internal_node;
+    int quadrant_internal_point;
+
+    bool done = false;
+    bool constructInternalNode = false;
+
+    BoxLimits limits;
     QuadTree *curr_node;
 
     for(unsigned int i=0; i<N_PARTICULES; i++)
     {
         // pointer points to root
         curr_node = &m_tree;
-        
-        // first update the current node with the particle information
-        curr_node->m_x_center += m_x[i]*m_mass[i] / curr_node->m_av_mass;
-        curr_node->m_y_center += m_y[i]*m_mass[i] / m_tree.m_av_mass;
-        curr_node->m_x_center = curr_node->m_x_center * curr_node->m_av_mass / (curr_node->m_av_mass + m_mass[i]);
-        curr_node->m_y_center = curr_node->m_y_center * curr_node->m_av_mass / (curr_node->m_av_mass + m_mass[i]);
-        curr_node->m_av_mass += m_mass[i];
-        curr_node->hasChildren = true;
+        // initialize border of grid
+        limits.left = m_x_min;
+        limits.right = m_x_max;
+        limits.top = m_y_max;
+        limits.bottom = m_y_min;
 
         done = false;
         // descend along the tree until found the right branch
         while(!done)
         {
+            // update the current node with the particle information
+            addBodyToNode(curr_node, m_mass[i], m_x[i], m_y[i]);
+
             //locate the particle
-            if (m_x[i] < (l+r)/2)
-            {
-                if (m_y[i] > (t+d)/2)
-                {
-                    quadrant = 0; 
-                    r = (l+r)/2;
-                    d = (t+d)/2;
-                }
-                else if (m_y[i] < (t+d)/2)
-                {
-                    quadrant = 2;
-                    r = (l+r)/2;
-                    t = (t+d)/2;
-                }
-            }
-            else if (m_x[i] > (l+r)/2)
-            {
-                if (m_y[i] > (t+d)/2)
-                {
-                    quadrant = 1;
-                    l = (l+r)/2;
-                    d = (t+d)/2;
-                }
-                else if (m_y[i] < (t+d)/2)
-                {
-                    quadrant = 3;
-                    l = (l+r)/2;
-                    t = (t+d)/2;
-                }
+            computePosition(m_x[i], m_y[i], limits, true);
+            quadrant = limits.quadrant;
 
-            }
-
-            // if no child at this node, update it
+            // if no child at this node, create it
             if (curr_node->m_children[quadrant] == nullptr)
             {
-                curr_node->m_children[quadrant] = new QuadTree();
-                curr_node->m_children[quadrant]->m_av_mass = m_mass[i];
-                curr_node->m_children[quadrant]->m_x_center = m_x[i];
-                curr_node->m_children[quadrant]->m_y_center = m_y[i];
+                createNode(curr_node, quadrant, m_mass[i], m_x[i], m_y[i]);
                 done = true;
             }
-
+            // if already a child, go deeper
             else
             {
-                // if leaf already exists, update it
-                curr_node = curr_node->m_children[quadrant];
-                /*
-                curr_node->m_x_center += m_x[i]*m_mass[i] / curr_node->m_av_mass;
-                curr_node->m_y_center += m_y[i]*m_mass[i] / m_tree.m_av_mass;
-                curr_node->m_x_center = curr_node->m_x_center * curr_node->m_av_mass / (curr_node->m_av_mass + m_mass[i]);
-                curr_node->m_y_center = curr_node->m_y_center * curr_node->m_av_mass / (curr_node->m_av_mass + m_mass[i]);
-                curr_node->m_av_mass += m_mass[i];
-                curr_node->hasChildren = true;
-                */
-            }
-            
-        }
+                if (curr_node->m_children[quadrant]->hasChildren)
+                {
+                    // already internal node, go deeper.
+                    curr_node = curr_node->m_children[quadrant];
+                }
+                else
+                {
+                    // has to bring the body down
+                    constructInternalNode = false;
+                    while(!constructInternalNode)
+                    {
+                        computePosition(m_x[i], m_y[i], limits, false);
+                        quadrant_internal_point = limits.quadrant;
+                        computePosition(curr_node->m_children[quadrant]->m_x_center, \
+                                         curr_node->m_children[quadrant]->m_y_center, limits, false);
 
+                        quadrant_internal_node = limits.quadrant;
+                        if (quadrant_internal_point != quadrant_internal_node)
+                        {
+                            createNode(curr_node->m_children[quadrant], quadrant_internal_point, m_mass[i], m_x[i], m_y[i]);
+                            createNode(curr_node->m_children[quadrant], quadrant_internal_node, curr_node->m_children[quadrant]->m_av_mass, \
+                                         curr_node->m_children[quadrant]->m_x_center, \
+                                         curr_node->m_children[quadrant]->m_y_center);
+                            addBodyToNode(curr_node->m_children[quadrant], m_mass[i], m_x[i], m_y[i]);
+
+                            constructInternalNode = true;
+                            done = true;
+                        } 
+                        else
+                        {
+                            computePosition(m_x[i], m_y[i], limits, true);
+                            quadrant_internal_point = limits.quadrant;
+                            createNode(curr_node->m_children[quadrant], quadrant_internal_point, m_mass[i], m_x[i], m_y[i]);
+                            addBodyToNode(curr_node->m_children[quadrant]->m_children[quadrant_internal_point], \
+                                            curr_node->m_children[quadrant]->m_av_mass, \
+                                            curr_node->m_children[quadrant]->m_x_center,
+                                            curr_node->m_children[quadrant]->m_y_center);
+                            curr_node = curr_node->m_children[quadrant];
+                        } 
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Particles::createNode(QuadTree *curr_node, int quadrant, float mass, float x, float y)
+{
+    curr_node->m_children[quadrant] = new QuadTree();
+    curr_node->m_children[quadrant]->m_av_mass = mass;
+    curr_node->m_children[quadrant]->m_x_center = x;
+    curr_node->m_children[quadrant]->m_y_center = y;
+}
+
+void Particles::addBodyToNode(QuadTree *curr_node, float mass, float x, float y)
+{
+    curr_node->m_x_center += x*mass / curr_node->m_av_mass;
+    curr_node->m_y_center += y*mass / curr_node->m_av_mass;
+    curr_node->m_x_center = curr_node->m_x_center * curr_node->m_av_mass / (curr_node->m_av_mass + mass);
+    curr_node->m_y_center = curr_node->m_y_center * curr_node->m_av_mass / (curr_node->m_av_mass + mass);
+    curr_node->m_av_mass += mass;
+    curr_node->hasChildren = true;
+}
+
+void Particles::computePosition(float x, float y, BoxLimits &limits, bool updateLimits)
+{
+    if (x < (limits.left+limits.right)/2)
+    {
+        if (y >= (limits.top+limits.bottom)/2)
+        {
+            limits.quadrant = 0;
+            if (updateLimits)
+            {
+                limits.right = (limits.left+limits.right)/2;
+                limits.top = (limits.top+limits.bottom)/2;
+            }
+        }
+        else if (y < (limits.top+limits.bottom)/2)
+        {
+            limits.quadrant = 2;
+            if (updateLimits)
+            {
+                limits.right = (limits.left+limits.right)/2;
+                limits.top = (limits.top+limits.bottom)/2;
+            }
+        }
+    }
+    else if (x >= (limits.left+limits.right)/2)
+    {
+        if (y >= (limits.top+limits.bottom)/2)
+        {
+            limits.quadrant = 1;
+            if (updateLimits)
+            {
+                limits.left = (limits.left+limits.right)/2;
+                limits.bottom = (limits.top+limits.bottom)/2;
+            }
+        }
+        else if (y < (limits.top+limits.bottom)/2)
+        {
+            limits.quadrant = 3;
+            if (updateLimits)
+            {
+                limits.left = (limits.left+limits.right)/2;
+                limits.top = (limits.top+limits.bottom)/2;
+            }
+        }
     }
 }
