@@ -25,7 +25,6 @@ class QuadTree
         float m_y_center;
         bool hasChildren;
         
-
         std::vector<QuadTree*> m_children;
         QuadTree();
         void quadtreeReset();

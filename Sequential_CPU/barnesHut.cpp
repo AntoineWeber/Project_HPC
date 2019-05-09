@@ -1,6 +1,10 @@
 #include "barnesHut.hpp"
 
 
+/**
+Constructor of the class Quadtree. Initialize every value to 0 and the pointers to the 4 quadrants to
+null.
+*/
 QuadTree::QuadTree()
 {
     m_av_mass = 0;
@@ -14,6 +18,9 @@ QuadTree::QuadTree()
     }
 }
 
+/**
+Method used to reset the tree. Recursive calls to all children
+*/
 void QuadTree::quadtreeReset()
 {
     for (unsigned int i=0; i<m_children.size(); i++)
@@ -25,6 +32,9 @@ void QuadTree::quadtreeReset()
     hasChildren = false;
 }
 
+/**
+Constructor for the class particle.
+*/
 Particles::Particles()
 {
     m_x.reserve(N_PARTICULES);
@@ -41,6 +51,10 @@ Particles::Particles()
     m_y_max = -std::numeric_limits<float>::infinity();
 }
 
+/**
+Method used to initialize the particles : thus far only uniform
+distribution is implemented.
+*/
 void Particles::initialize(std::string pattern)
 {
     if (pattern == "uniform")
@@ -65,11 +79,17 @@ void Particles::initialize(std::string pattern)
     }
 }
 
+/**
+To call the quadtree reset from the particle class.
+*/
 void Particles::resetTree()
 {
     m_tree.quadtreeReset();
 }
 
+/**
+Method computing the box including all particles
+*/
 // might get rid of this function if considering a fixed box and everything outside is "far space"
 void Particles::computeBoundingBox()
 {
@@ -95,9 +115,12 @@ void Particles::computeBoundingBox()
     }
 }
 
+/**
+Method building the barnes-hut tree
+*/
 void Particles::buildTree()
-{
-    // 0:NW   1:NE  2:SW    3:SE  
+{   // The quadrant variable can take value from 0 to 3
+    // 0:NW   1:NE  2:SW    3:SE 
 
     int quadrant;
     int quadrant_internal_node;
@@ -111,8 +134,9 @@ void Particles::buildTree()
 
     for(unsigned int i=0; i<N_PARTICULES; i++)
     {
-        // pointer points to root
+        // pointer points to root of the tree
         curr_node = &m_tree;
+
         // initialize border of grid
         limits.left = m_x_min;
         limits.right = m_x_max;
@@ -130,23 +154,24 @@ void Particles::buildTree()
             computePosition(m_x[i], m_y[i], limits, true);
             quadrant = limits.quadrant;
 
-            // if no child at this node, create it
+            // if no child at this node, create it and go to next particle
             if (curr_node->m_children[quadrant] == nullptr)
             {
                 createNode(curr_node, quadrant, m_mass[i], m_x[i], m_y[i]);
                 done = true;
             }
-            // if already a child, go deeper
+            // if already a child, go deeper down the tree
             else
             {
                 if (curr_node->m_children[quadrant]->hasChildren)
                 {
-                    // already internal node, go deeper.
+                    // node has already children, go deeper
                     curr_node = curr_node->m_children[quadrant];
                 }
                 else
                 {
-                    // has to bring the body down
+                    // node has no children, hence is not an internal node. Have to create the rest of the branch and bring both
+                    // body down : the particle considered and the considered node being a particle.
                     constructInternalNode = false;
                     while(!constructInternalNode)
                     {
@@ -156,6 +181,7 @@ void Particles::buildTree()
                                          curr_node->m_children[quadrant]->m_y_center, limits, false);
 
                         quadrant_internal_node = limits.quadrant;
+                        // if after having cut the space they both go to a different quadrant, construct both nodes and go to next particle
                         if (quadrant_internal_point != quadrant_internal_node)
                         {
                             createNode(curr_node->m_children[quadrant], quadrant_internal_point, m_mass[i], m_x[i], m_y[i]);
@@ -169,6 +195,8 @@ void Particles::buildTree()
                         } 
                         else
                         {
+                            // else create internal nodes until they go to different quadrants.
+                            // need to call this function to cut the space in 4
                             computePosition(m_x[i], m_y[i], limits, true);
                             quadrant_internal_point = limits.quadrant;
                             createNode(curr_node->m_children[quadrant], quadrant_internal_point, m_mass[i], m_x[i], m_y[i]);
@@ -185,6 +213,9 @@ void Particles::buildTree()
     }
 }
 
+/**
+Method used to create a node when none exists in the tree
+*/
 void Particles::createNode(QuadTree *curr_node, int quadrant, float mass, float x, float y)
 {
     curr_node->m_children[quadrant] = new QuadTree();
@@ -193,6 +224,9 @@ void Particles::createNode(QuadTree *curr_node, int quadrant, float mass, float 
     curr_node->m_children[quadrant]->m_y_center = y;
 }
 
+/**
+Method used to add a body to an already existing node
+*/
 void Particles::addBodyToNode(QuadTree *curr_node, float mass, float x, float y)
 {
     curr_node->m_x_center += x*mass / curr_node->m_av_mass;
@@ -203,12 +237,20 @@ void Particles::addBodyToNode(QuadTree *curr_node, float mass, float x, float y)
     curr_node->hasChildren = true;
 }
 
+
+/**
+Method used to locate the particle in the space defined by limits, and update the borders if boolean to true.
+As the function takes a reference as input, there is no need to return any value.
+*/
 void Particles::computePosition(float x, float y, BoxLimits &limits, bool updateLimits)
 {
+    // if on the left side of the space
     if (x < (limits.left+limits.right)/2)
     {
+        // if on the top side
         if (y >= (limits.top+limits.bottom)/2)
         {
+            // NW quadrant
             limits.quadrant = 0;
             if (updateLimits)
             {
@@ -216,8 +258,10 @@ void Particles::computePosition(float x, float y, BoxLimits &limits, bool update
                 limits.top = (limits.top+limits.bottom)/2;
             }
         }
+        // if on the bottom side
         else if (y < (limits.top+limits.bottom)/2)
         {
+            // SW quadrant
             limits.quadrant = 2;
             if (updateLimits)
             {
@@ -226,10 +270,13 @@ void Particles::computePosition(float x, float y, BoxLimits &limits, bool update
             }
         }
     }
+    // if on the right side of the space
     else if (x >= (limits.left+limits.right)/2)
     {
+        // if on the top side
         if (y >= (limits.top+limits.bottom)/2)
         {
+            // quadrant NE
             limits.quadrant = 1;
             if (updateLimits)
             {
@@ -237,8 +284,10 @@ void Particles::computePosition(float x, float y, BoxLimits &limits, bool update
                 limits.bottom = (limits.top+limits.bottom)/2;
             }
         }
+        // if on the bottom side
         else if (y < (limits.top+limits.bottom)/2)
         {
+            // quadrant SE
             limits.quadrant = 3;
             if (updateLimits)
             {
