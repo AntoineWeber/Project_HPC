@@ -8,7 +8,7 @@
 #include <limits>
 
 #define N_ITERATIONS 100
-#define N_PARTICULES 1024
+#define N_PARTICULES 2048
 #define CHILD 4
 
 struct BoxLimits
@@ -56,4 +56,5 @@ class Particles
         void resetTree();
         void computeBoundingBox();
         void buildTree();
+        void computeForce();
 };
