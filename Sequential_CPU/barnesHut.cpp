@@ -10,6 +10,7 @@ QuadTree::QuadTree()
     m_av_mass = 0;
     m_x_center = 0;
     m_y_center = 0;
+    depth = 0;
     hasChildren = false;
     m_children.resize(CHILD);
     for (unsigned int i=0; i<CHILD; i++)
@@ -64,12 +65,12 @@ void Particles::initialize(std::string pattern)
     {
         std::cout << "Initializing the particles in a square with uniform distribution" << std::endl;
         std::default_random_engine generator(time(0));
-        std::uniform_real_distribution<float> square(-5.0, 5.0);
+        std::uniform_real_distribution<float> square(-BOUNDS, BOUNDS);
 
         // loop through all particles
         for (int i = 0; i < N_PARTICULES; i++){
 
-            m_mass[i] = 1.0;
+            m_mass[i] = MASS;
             m_x[i] = square(generator);
             m_y[i] = square(generator);
 
@@ -138,6 +139,7 @@ void Particles::buildTree()
     float end_leaf_mass, end_leaf_posx, end_leaf_posy;
 
     // reset tree after having deleted everything
+    m_tree.depth = 0;
     m_tree.m_children.resize(CHILD);
     for (unsigned int i=0; i<CHILD; i++)
     {
@@ -146,6 +148,7 @@ void Particles::buildTree()
 
     for(unsigned int i=0; i<N_PARTICULES; i++)
     {
+        //std::cout << "particle number : " << i << std::endl;
         // pointer points to root of the tree
         curr_node = &m_tree;
 
@@ -159,9 +162,8 @@ void Particles::buildTree()
         // descend along the tree until found the right branch
         while(!done)
         {
-            //std::cout << "particle number : " << i << std::endl;
             // update the current node with the particle information
-            addBodyToNode(curr_node, m_mass[i], m_x[i], m_y[i]);
+            curr_node->addBodyToNode(m_mass[i], m_x[i], m_y[i]);
 
             //locate the particle
             computePosition(m_x[i], m_y[i], limits, true);
@@ -170,7 +172,7 @@ void Particles::buildTree()
             // if no child at this node, create it and go to next particle
             if (curr_node->m_children[quadrant] == nullptr)
             {
-                createNode(curr_node, quadrant, m_mass[i], m_x[i], m_y[i]);
+                curr_node->createNode(quadrant, m_mass[i], m_x[i], m_y[i], curr_node->depth);
                 done = true;
             }
             // if already a child, go deeper down the tree
@@ -208,23 +210,26 @@ void Particles::buildTree()
                         // if after having cut the space they both go to a different quadrant, construct both nodes and go to next particle
                         if (quadrant_internal_point != quadrant_internal_node)
                         {
-                            createNode(curr_node->m_children[quadrant], quadrant_internal_point, m_mass[i], m_x[i], m_y[i]);
-                            createNode(curr_node->m_children[quadrant], quadrant_internal_node, end_leaf_mass, end_leaf_posx, end_leaf_posy);
-                            addBodyToNode(curr_node->m_children[quadrant], m_mass[i], m_x[i], m_y[i]);
+                            curr_node->m_children[quadrant]->createNode(quadrant_internal_point, m_mass[i], m_x[i], m_y[i],
+                                                                         curr_node->m_children[quadrant]->depth);
+                            curr_node->m_children[quadrant]->createNode(quadrant_internal_node, end_leaf_mass, end_leaf_posx,
+                                                                         end_leaf_posy, curr_node->m_children[quadrant]->depth);
+                            curr_node->m_children[quadrant]->addBodyToNode(m_mass[i], m_x[i], m_y[i]);
 
                             constructInternalNode = true;
                             done = true;
                         } 
                         else
                         {
-                            addBodyToNode(curr_node->m_children[quadrant], m_mass[i], m_x[i], m_y[i]);
+                            curr_node->m_children[quadrant]->addBodyToNode(m_mass[i], m_x[i], m_y[i]);
                             // else create internal nodes until they go to different quadrants.
                             // need to call this function to cut the space in 4
                             computePosition(m_x[i], m_y[i], limits, true);
                             quadrant_internal_point = limits.quadrant;
-                            createNode(curr_node->m_children[quadrant], quadrant_internal_point, m_mass[i], m_x[i], m_y[i]);
-                            addBodyToNode(curr_node->m_children[quadrant]->m_children[quadrant_internal_point], 
-                                            end_leaf_mass, end_leaf_posx, end_leaf_posy);
+                            curr_node->m_children[quadrant]->createNode(quadrant_internal_point, m_mass[i], m_x[i], m_y[i],
+                                                                         curr_node->m_children[quadrant]->depth);
+                            curr_node->m_children[quadrant]->m_children[quadrant_internal_point]->addBodyToNode(end_leaf_mass,
+                                                                                                 end_leaf_posx, end_leaf_posy);
                             curr_node = curr_node->m_children[quadrant];
                             quadrant = quadrant_internal_point;
                         } 
@@ -238,25 +243,26 @@ void Particles::buildTree()
 /**
 Method used to create a node when none exists in the tree
 */
-void Particles::createNode(QuadTree *curr_node, int quadrant, float mass, float x, float y)
+void QuadTree::createNode(int quadrant, float mass, float x, float y, int prof)
 {
-    curr_node->m_children[quadrant] = new QuadTree();
-    curr_node->m_children[quadrant]->m_av_mass = mass;
-    curr_node->m_children[quadrant]->m_x_center = x;
-    curr_node->m_children[quadrant]->m_y_center = y;
+    m_children[quadrant] = new QuadTree();
+    m_children[quadrant]->m_av_mass = mass;
+    m_children[quadrant]->m_x_center = x;
+    m_children[quadrant]->m_y_center = y;
+    depth = prof + 1;
 }
 
 /**
 Method used to add a body to an already existing node
 */
-void Particles::addBodyToNode(QuadTree *curr_node, float mass, float x, float y)
+void QuadTree::addBodyToNode(float mass, float x, float y)
 {
-    curr_node->m_x_center += x*mass / curr_node->m_av_mass;
-    curr_node->m_y_center += y*mass / curr_node->m_av_mass;
-    curr_node->m_x_center = curr_node->m_x_center * curr_node->m_av_mass / (curr_node->m_av_mass + mass);
-    curr_node->m_y_center = curr_node->m_y_center * curr_node->m_av_mass / (curr_node->m_av_mass + mass);
-    curr_node->m_av_mass += mass;
-    curr_node->hasChildren = true;
+    m_x_center += x*mass / m_av_mass;
+    m_y_center += y*mass / m_av_mass;
+    m_x_center = m_x_center * m_av_mass / (m_av_mass + mass);
+    m_y_center = m_y_center * m_av_mass / (m_av_mass + mass);
+    m_av_mass += mass;
+    hasChildren = true;
 }
 
 
@@ -321,10 +327,8 @@ void Particles::computePosition(float x, float y, BoxLimits &limits, bool update
 }
 
 
-void Particles::computeForce()
+void Particles::computeDisplacement()
 {
-    QuadTree *curr_node;
-    bool computeBranch = false;
     float fx = 0;
     float fy = 0;
 
@@ -332,14 +336,81 @@ void Particles::computeForce()
     {
         fx = 0;
         fy = 0;
-        curr_node = &m_tree;
-        for (unsigned int child=0; child<curr_node->m_children.size(); child++)
-        {
-            computeBranch = false;
-            while(!computeBranch)
-            {
-                //compute current branch
-            }
-        } 
+        m_tree.computeBranchesComponent(m_x[i], m_y[i], m_mass[i], fx, fy);
+
+        m_ax[i] = fx / m_mass[i];
+        m_ay[i] = fy / m_mass[i];
+
+        m_x[i] += 0.5*m_ax[i]*TIMESTEP*TIMESTEP + m_vx[i]*TIMESTEP;
+        m_y[i] += 0.5*m_ay[i]*TIMESTEP*TIMESTEP + m_vy[i]*TIMESTEP;
+
+        m_vx[i] += m_ax[i]*TIMESTEP;
+        m_vy[i] += m_ay[i]*TIMESTEP;
     }
 }
+
+void QuadTree::computeBranchesComponent(float x, float y, float m, float &fx, float &fy)
+{
+    float r, s;
+    for (unsigned int i=0; i<m_children.size(); i++)
+    {
+        // if child exists
+        if (m_children[i] != nullptr)
+        {
+            r = sqrt((m_children[i]->m_x_center-x)*(m_children[i]->m_x_center-x) + (m_children[i]->m_y_center-y)*(m_children[i]->m_y_center-y));
+            // if external node, compute force with it and add it to force component
+            if (!m_children[i]->hasChildren)
+            {
+                if (r > EPSILON)
+                {
+                    fx += (G*m*m_children[i]->m_av_mass*(m_children[i]->m_x_center-x))/r;
+                    fy += (G*m*m_children[i]->m_av_mass*(m_children[i]->m_y_center-y))/r;
+                }
+                else
+                {
+                    fx += (G*m*m_children[i]->m_av_mass*(m_children[i]->m_x_center-x))/EPSILON;
+                    fy += (G*m*m_children[i]->m_av_mass*(m_children[i]->m_y_center-y))/EPSILON;
+                }
+                
+            }
+            // if internal node
+            else
+            {
+                // compute the quotient s/r
+                s = 2*BOUNDS / pow(2.0, depth);
+
+                // if too far, consider as a single body
+                if (s / r < THETA)
+                {
+                    // still checks for EPSILON as theta could be as small as wanted.
+                    if (r > EPSILON)
+                    {
+                        fx += (G*m*m_children[i]->m_av_mass*(m_children[i]->m_x_center-x))/r;
+                        fy += (G*m*m_children[i]->m_av_mass*(m_children[i]->m_y_center-y))/r;
+                    }
+                    else
+                    {
+                        fx += (G*m*m_children[i]->m_av_mass*(m_children[i]->m_x_center-x))/EPSILON;
+                        fy += (G*m*m_children[i]->m_av_mass*(m_children[i]->m_y_center-y))/EPSILON;
+                    }
+                }
+                else
+                {
+                    // recursive call
+                    m_children[i]->computeBranchesComponent(x,y,m,fx,fy);
+                }
+            }
+        }
+    }
+}
+
+
+#ifdef SAVE
+void Particles::saveToFile(std::ofstream *file)
+{
+    for (unsigned int i=0; i<N_PARTICULES; i++)
+    {
+        *file << m_x[i] << " " << m_y[i] << "\n";
+    }
+}
+#endif
