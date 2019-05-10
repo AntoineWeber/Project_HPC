@@ -6,9 +6,9 @@
 #include <cuda_runtime_api.h>
 
 
-void initializeParticlesUni(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc,float *mass, dim3 gridSize, dim3 blockSize);
-void initializeParticlesCircle(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc,float *mass, dim3 gridSize, dim3 blockSize);
-void computeForces(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass, dim3 gridSize, dim3 blockSize);
+void initializeParticlesUni(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc,double *mass, dim3 gridSize, dim3 blockSize);
+void initializeParticlesCircle(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc,double *mass, dim3 gridSize, dim3 blockSize);
+void computeForces(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass, dim3 gridSize, dim3 blockSize);
 
 
 #endif

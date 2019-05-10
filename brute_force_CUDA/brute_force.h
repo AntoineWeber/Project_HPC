@@ -2,9 +2,9 @@
 #ifndef _BRUTE_FORCE_H_
 #define _BRUTE_FORCE_H_
 
-//#define SAVE true
+#define SAVE true
 
-#define N_PARTICLES 2048
+#define N_PARTICLES 4096
 #define GRID_SIZE 32
 #define BLOCK_SIZE 32
 
@@ -48,13 +48,13 @@ private:
 
 struct Position
 {
-    float x,y;
+    double x,y;
 };
 
 void initiateDevice();
 
 #ifdef SAVE
-std::vector<Position> fillArray(float *pos_x, float *pos_y);
+std::vector<Position> fillArray(double *pos_x, double *pos_y);
 #endif
 
 #endif // _BRUTE_FORCE_H_

@@ -6,17 +6,17 @@
 #include "brute_force.h"
 
 
-void initializeParticlesUni(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass, dim3 gridSize, dim3 blockSize)
+void initializeParticlesUni(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass, dim3 gridSize, dim3 blockSize)
 {
 	initialize_particles_uni<<< gridSize, blockSize>>>(x_pos, y_pos, x_vel, y_vel, x_acc, y_acc, mass);
 }
 
-void initializeParticlesCircle(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass, dim3 gridSize, dim3 blockSize)
+void initializeParticlesCircle(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass, dim3 gridSize, dim3 blockSize)
 {
 	initialize_particles_circle<<< gridSize, blockSize>>>(x_pos, y_pos, x_vel, y_vel, x_acc, y_acc, mass);
 }
 
-void computeForces(float *x_pos, float *y_pos, float *x_vel, float *y_vel, float *x_acc, float *y_acc, float *mass, dim3 gridSize, dim3 blockSize)
+void computeForces(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass, dim3 gridSize, dim3 blockSize)
 {
     compute_forces<<<gridSize, blockSize>>>(x_pos, y_pos, x_vel, y_vel, x_acc, y_acc, mass);
 }

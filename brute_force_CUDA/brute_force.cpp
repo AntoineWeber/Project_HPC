@@ -32,15 +32,15 @@ int main(int argc, char** argv)
 
     // allocate memory for the particle array
     unsigned int size_particles = N_PARTICLES; // plane coordinates
-    unsigned int mem_size_particles = sizeof(float) * size_particles;
+    unsigned int mem_size_particles = sizeof(double) * size_particles;
 
-    float* d_pos_x;
-    float* d_pos_y;
-    float* d_vel_x;
-    float* d_vel_y;
-    float* d_acc_x;
-    float* d_acc_y;
-    float* d_mass;
+    double* d_pos_x;
+    double* d_pos_y;
+    double* d_vel_x;
+    double* d_vel_y;
+    double* d_acc_x;
+    double* d_acc_y;
+    double* d_mass;
 
     gpuErrchk(cudaMalloc((void**) &d_pos_x, mem_size_particles));
     gpuErrchk(cudaMalloc((void**) &d_pos_y, mem_size_particles));
@@ -55,8 +55,8 @@ int main(int argc, char** argv)
 
     // used for output saving
     #ifdef SAVE
-        float *h_pos_x = (float*)malloc(mem_size_particles);
-        float *h_pos_y = (float*)malloc(mem_size_particles);
+        double *h_pos_x = (double*)malloc(mem_size_particles);
+        double *h_pos_y = (double*)malloc(mem_size_particles);
         std::vector<Position> output(N_PARTICLES);
 
         //open file
@@ -148,7 +148,7 @@ void initiateDevice()
 }
 
 #ifdef SAVE
-std::vector<Position> fillArray(float *pos_x, float *pos_y)
+std::vector<Position> fillArray(double *pos_x, double *pos_y)
 {
     std::vector<Position> output(N_PARTICLES);
     for (int i=0; i<N_PARTICLES; i++)
