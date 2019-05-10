@@ -49,10 +49,10 @@ Particles::Particles()
     m_ay.resize(N_PARTICULES);
     m_mass.resize(N_PARTICULES);
 
-    m_x_min = std::numeric_limits<float>::infinity();
-    m_x_max = -std::numeric_limits<float>::infinity();
-    m_y_min = std::numeric_limits<float>::infinity();
-    m_y_max = -std::numeric_limits<float>::infinity();
+    m_x_min = -FAR_SPACE;
+    m_x_max = FAR_SPACE;
+    m_y_min = -FAR_SPACE;
+    m_y_max = FAR_SPACE;
 }
 
 /**
@@ -65,7 +65,7 @@ void Particles::initialize(std::string pattern)
     {
         std::cout << "Initializing the particles in a square with uniform distribution" << std::endl;
         std::default_random_engine generator(time(0));
-        std::uniform_real_distribution<float> square(-BOUNDS, BOUNDS);
+        std::uniform_real_distribution<double> square(-BOUNDS, BOUNDS);
 
         // loop through all particles
         for (int i = 0; i < N_PARTICULES; i++){
@@ -73,6 +73,30 @@ void Particles::initialize(std::string pattern)
             m_mass[i] = MASS;
             m_x[i] = square(generator);
             m_y[i] = square(generator);
+
+            // set velocity and acceleration at 0
+            m_vx[i] = 0;
+            m_vy[i] = 0;
+            m_ax[i] = 0;
+            m_ay[i] = 0;
+        }
+    }
+    else if (pattern == "circle")
+    {
+        std::cout << "Initializing the particles in a square with a circle distribution" << std::endl;
+        std::default_random_engine generator(time(0));
+        std::uniform_real_distribution<double> radius(0, 2*BOUNDS-CIRCLE_OFFSET);
+        std::uniform_real_distribution<double> angle(0, 2*M_PI);
+        double r, theta;
+        // loop through all particles
+        for (int i = 0; i < N_PARTICULES; i++){
+
+            r = CIRCLE_OFFSET + radius(generator);
+            theta = angle(generator);
+
+            m_mass[i] = MASS;
+            m_x[i] = r*cos(theta);
+            m_y[i] = r*sin(theta);
 
             // set velocity and acceleration at 0
             m_vx[i] = 0;
@@ -92,34 +116,6 @@ void Particles::resetTree()
 }
 
 /**
-Method computing the box including all particles
-*/
-// might get rid of this function if considering a fixed box and everything outside is "far space"
-void Particles::computeBoundingBox()
-{
-    for (unsigned int i=0; i<N_PARTICULES; i++)
-    {
-        if (m_x[i] < m_x_min)
-        {
-            m_x_min = m_x[i];
-        }
-        else if (m_x[i] > m_x_max)
-        {
-            m_x_max = m_x[i];
-        }
-        
-        if (m_y[i] < m_y_min)
-        {
-            m_y_min = m_y[i];
-        }
-        else if (m_y[i] > m_y_max)
-        {
-            m_y_max = m_y[i];
-        }
-    }
-}
-
-/**
 Method building the barnes-hut tree
 */
 void Particles::buildTree()
@@ -136,7 +132,7 @@ void Particles::buildTree()
     BoxLimits limits;
     QuadTree *curr_node;
 
-    float end_leaf_mass, end_leaf_posx, end_leaf_posy;
+    double end_leaf_mass, end_leaf_posx, end_leaf_posy;
 
     // reset tree after having deleted everything
     m_tree.depth = 0;
@@ -148,7 +144,11 @@ void Particles::buildTree()
 
     for(unsigned int i=0; i<N_PARTICULES; i++)
     {
-        //std::cout << "particle number : " << i << std::endl;
+        // if particle in the far space
+        if (m_x[i] > FAR_SPACE || m_x[i] < -FAR_SPACE || m_y[i] > FAR_SPACE || m_y[i] < -FAR_SPACE)
+        {
+            continue;
+        }
         // pointer points to root of the tree
         curr_node = &m_tree;
 
@@ -243,19 +243,20 @@ void Particles::buildTree()
 /**
 Method used to create a node when none exists in the tree
 */
-void QuadTree::createNode(int quadrant, float mass, float x, float y, int prof)
+void QuadTree::createNode(int quadrant, double mass, double x, double y, int prof)
 {
     m_children[quadrant] = new QuadTree();
     m_children[quadrant]->m_av_mass = mass;
     m_children[quadrant]->m_x_center = x;
     m_children[quadrant]->m_y_center = y;
     depth = prof + 1;
+    //std::cout << depth << " " << quadrant << std::endl;
 }
 
 /**
 Method used to add a body to an already existing node
 */
-void QuadTree::addBodyToNode(float mass, float x, float y)
+void QuadTree::addBodyToNode(double mass, double x, double y)
 {
     m_x_center += x*mass / m_av_mass;
     m_y_center += y*mass / m_av_mass;
@@ -270,7 +271,7 @@ void QuadTree::addBodyToNode(float mass, float x, float y)
 Method used to locate the particle in the space defined by limits, and update the borders if boolean to true.
 As the function takes a reference as input, there is no need to return any value.
 */
-void Particles::computePosition(float x, float y, BoxLimits &limits, bool updateLimits)
+void Particles::computePosition(double x, double y, BoxLimits &limits, bool updateLimits)
 {
     // if on the left side of the space
     if (x < (limits.left+limits.right)/2)
@@ -324,20 +325,38 @@ void Particles::computePosition(float x, float y, BoxLimits &limits, bool update
             }
         }
     }
+    else
+    {
+        std::cout << "dessu" << std::endl;
+        exit(0);
+    }
+    
 }
 
 
 void Particles::computeDisplacement()
 {
-    float fx = 0;
-    float fy = 0;
+    double fx = 0;
+    double fy = 0;
 
     for(unsigned int i=0; i<N_PARTICULES; i++)
     {
         fx = 0;
         fy = 0;
-        m_tree.computeBranchesComponent(m_x[i], m_y[i], m_mass[i], fx, fy);
 
+        // if particle in the far space
+        if (m_x[i] > FAR_SPACE || m_x[i] < -FAR_SPACE || m_y[i] > FAR_SPACE || m_y[i] < -FAR_SPACE)
+        {
+            fx = 0;
+            fy = 0;
+        }
+        else
+        {
+            // call recursive method to compute the force
+            m_tree.computeBranchesComponent(m_x[i], m_y[i], m_mass[i], fx, fy);
+        }
+
+        // compute acceleration velocity and position based on the force
         m_ax[i] = fx / m_mass[i];
         m_ay[i] = fy / m_mass[i];
 
@@ -349,9 +368,9 @@ void Particles::computeDisplacement()
     }
 }
 
-void QuadTree::computeBranchesComponent(float x, float y, float m, float &fx, float &fy)
+void QuadTree::computeBranchesComponent(double x, double y, double m, double &fx, double &fy)
 {
-    float r, s;
+    double r, s;
     for (unsigned int i=0; i<m_children.size(); i++)
     {
         // if child exists

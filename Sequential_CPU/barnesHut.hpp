@@ -8,11 +8,11 @@
 #include <limits>
 #include <cmath>
 
-#define SAVE true
+//#define SAVE true
 
 #define THETA 0.5
 #define N_ITERATIONS 100
-#define N_PARTICULES 1024
+#define N_PARTICULES 4096
 #define CHILD 4
 #define G 6.67408e-11
 #define EPSILON 0.001
@@ -20,19 +20,21 @@
 
 #define BOUNDS 5
 #define TIMESTEP 100
+#define CIRCLE_OFFSET 3
+#define FAR_SPACE 20
 
 struct BoxLimits
 {
-    float left,right,top,bottom;
+    double left,right,top,bottom;
     int quadrant;
 };
 
 class QuadTree
 {
     public:
-        float m_av_mass;
-        float m_x_center;
-        float m_y_center;
+        double m_av_mass;
+        double m_x_center;
+        double m_y_center;
         bool hasChildren;
         int depth;
         
@@ -40,33 +42,32 @@ class QuadTree
 
         QuadTree();
         void quadtreeReset();
-        void createNode(int quadrant, float mass, float x, float y, int depth);
-        void addBodyToNode(float mass, float x, float y);
-        void computeBranchesComponent(float x, float y, float m, float &fx, float &fy);
+        void createNode(int quadrant, double mass, double x, double y, int depth);
+        void addBodyToNode(double mass, double x, double y);
+        void computeBranchesComponent(double x, double y, double m, double &fx, double &fy);
 
 };
 
 class Particles
 {
     private:
-        std::vector<float> m_x;
-        std::vector<float> m_y;
-        std::vector<float> m_vx;
-        std::vector<float> m_vy;
-        std::vector<float> m_ax;
-        std::vector<float> m_ay;
-        std::vector<float> m_mass;
+        std::vector<double> m_x;
+        std::vector<double> m_y;
+        std::vector<double> m_vx;
+        std::vector<double> m_vy;
+        std::vector<double> m_ax;
+        std::vector<double> m_ay;
+        std::vector<double> m_mass;
 
         QuadTree m_tree;
 
-        float m_x_min, m_x_max, m_y_min, m_y_max;
+        double m_x_min, m_x_max, m_y_min, m_y_max;
 
-        void computePosition(float x, float y, BoxLimits &limits, bool updateLimits);
+        void computePosition(double x, double y, BoxLimits &limits, bool updateLimits);
     public:
         Particles();
         void initialize(std::string pattern);
         void resetTree();
-        void computeBoundingBox();
         void buildTree();
         void computeDisplacement();
         #ifdef SAVE
