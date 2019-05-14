@@ -8,20 +8,20 @@
 #include <limits>
 #include <cmath>
 
-//#define SAVE true
+#define SAVE true
 
 #define THETA 0.5
 #define N_ITERATIONS 100
-#define N_PARTICULES 4096
+#define N_PARTICULES 65536
 #define CHILD 4
 #define G 6.67408e-11
 #define EPSILON 0.001
-#define MASS 100.0
+#define MASS 10.0
 
 #define BOUNDS 5
 #define TIMESTEP 100
 #define CIRCLE_OFFSET 3
-#define FAR_SPACE 20
+#define FAR_SPACE 30
 
 struct BoxLimits
 {
@@ -35,8 +35,10 @@ class QuadTree
         double m_av_mass;
         double m_x_center;
         double m_y_center;
+        double m_s;
+
         bool hasChildren;
-        int depth;
+        
         
         std::vector<QuadTree*> m_children;
 

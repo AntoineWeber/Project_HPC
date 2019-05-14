@@ -43,6 +43,10 @@ int main(int argc, char** argv)
     Particles allParticles;
     allParticles.initialize("circle");
     double elapsed_ini = t1.elapsed();
+    
+    #ifdef SAVE
+        allParticles.saveToFile(&myFile);
+    #endif
 
     t1.reset();
     for (unsigned int i=0; i<N_ITERATIONS; i++)

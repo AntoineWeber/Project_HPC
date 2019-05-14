@@ -10,7 +10,7 @@ QuadTree::QuadTree()
     m_av_mass = 0;
     m_x_center = 0;
     m_y_center = 0;
-    depth = 0;
+    m_s = 0;
     hasChildren = false;
     m_children.resize(CHILD);
     for (unsigned int i=0; i<CHILD; i++)
@@ -90,7 +90,21 @@ void Particles::initialize(std::string pattern)
         double r, theta;
         // loop through all particles
         for (int i = 0; i < N_PARTICULES; i++){
+            /*
+            if (i==0)
+            {
+                m_mass[i] = MASS * 10000;
+                m_x[i] = 0.0;
+                m_y[i] = 0.0;
+                m_vx[i] = 0.0;
+                m_vy[i] = 0.0;
+                m_ax[i] = 0.0;
+                m_ay[i] = 0.0;
 
+            }
+            else
+            {
+                */
             r = CIRCLE_OFFSET + radius(generator);
             theta = angle(generator);
 
@@ -99,10 +113,11 @@ void Particles::initialize(std::string pattern)
             m_y[i] = r*sin(theta);
 
             // set velocity and acceleration at 0
-            m_vx[i] = 0;
-            m_vy[i] = 0;
+            m_vx[i] = 0.006*sin(theta);
+            m_vy[i] = -0.006*cos(theta);
             m_ax[i] = 0;
             m_ay[i] = 0;
+            //}
         }
     }
 }
@@ -130,12 +145,13 @@ void Particles::buildTree()
     bool constructInternalNode = false;
 
     BoxLimits limits;
+    limits.quadrant = -1;
     QuadTree *curr_node;
 
     double end_leaf_mass, end_leaf_posx, end_leaf_posy;
 
     // reset tree after having deleted everything
-    m_tree.depth = 0;
+    m_tree.m_s = 2*BOUNDS;
     m_tree.m_children.resize(CHILD);
     for (unsigned int i=0; i<CHILD; i++)
     {
@@ -172,7 +188,7 @@ void Particles::buildTree()
             // if no child at this node, create it and go to next particle
             if (curr_node->m_children[quadrant] == nullptr)
             {
-                curr_node->createNode(quadrant, m_mass[i], m_x[i], m_y[i], curr_node->depth);
+                curr_node->createNode(quadrant, m_mass[i], m_x[i], m_y[i], curr_node->m_s);
                 done = true;
             }
             // if already a child, go deeper down the tree
@@ -211,9 +227,9 @@ void Particles::buildTree()
                         if (quadrant_internal_point != quadrant_internal_node)
                         {
                             curr_node->m_children[quadrant]->createNode(quadrant_internal_point, m_mass[i], m_x[i], m_y[i],
-                                                                         curr_node->m_children[quadrant]->depth);
+                                                                         curr_node->m_children[quadrant]->m_s);
                             curr_node->m_children[quadrant]->createNode(quadrant_internal_node, end_leaf_mass, end_leaf_posx,
-                                                                         end_leaf_posy, curr_node->m_children[quadrant]->depth);
+                                                                         end_leaf_posy, curr_node->m_children[quadrant]->m_s);
                             curr_node->m_children[quadrant]->addBodyToNode(m_mass[i], m_x[i], m_y[i]);
 
                             constructInternalNode = true;
@@ -227,7 +243,7 @@ void Particles::buildTree()
                             computePosition(m_x[i], m_y[i], limits, true);
                             quadrant_internal_point = limits.quadrant;
                             curr_node->m_children[quadrant]->createNode(quadrant_internal_point, m_mass[i], m_x[i], m_y[i],
-                                                                         curr_node->m_children[quadrant]->depth);
+                                                                         curr_node->m_children[quadrant]->m_s);
                             curr_node->m_children[quadrant]->m_children[quadrant_internal_point]->addBodyToNode(end_leaf_mass,
                                                                                                  end_leaf_posx, end_leaf_posy);
                             curr_node = curr_node->m_children[quadrant];
@@ -249,7 +265,7 @@ void QuadTree::createNode(int quadrant, double mass, double x, double y, int pro
     m_children[quadrant]->m_av_mass = mass;
     m_children[quadrant]->m_x_center = x;
     m_children[quadrant]->m_y_center = y;
-    depth = prof + 1;
+    m_s = prof / 2;
     //std::cout << depth << " " << quadrant << std::endl;
 }
 
@@ -396,7 +412,7 @@ void QuadTree::computeBranchesComponent(double x, double y, double m, double &fx
             else
             {
                 // compute the quotient s/r
-                s = 2*BOUNDS / pow(2.0, depth);
+                s = m_s;
 
                 // if too far, consider as a single body
                 if (s / r < THETA)
