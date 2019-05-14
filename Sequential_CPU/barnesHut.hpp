@@ -8,7 +8,7 @@
 #include <limits>
 #include <cmath>
 
-#define SAVE true
+//#define SAVE true
 
 #define THETA 0.5
 #define N_ITERATIONS 100
