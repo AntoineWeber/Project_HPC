@@ -7,10 +7,10 @@ null.
 */
 QuadTree::QuadTree()
 {
-    m_av_mass = 0;
-    m_x_center = 0;
-    m_y_center = 0;
-    m_s = 0;
+    m_av_mass = 0.0;
+    m_x_center = 0.0;
+    m_y_center = 0.0;
+    m_s = 0.0;
     hasChildren = false;
     m_children.resize(CHILD);
     for (unsigned int i=0; i<CHILD; i++)
@@ -113,8 +113,8 @@ void Particles::initialize(std::string pattern)
             m_y[i] = r*sin(theta);
 
             // set velocity and acceleration at 0
-            m_vx[i] = 0.006*sin(theta);
-            m_vy[i] = -0.006*cos(theta);
+            m_vx[i] = 0;//0.006*sin(theta);
+            m_vy[i] = 0;//-0.006*cos(theta);
             m_ax[i] = 0;
             m_ay[i] = 0;
             //}
@@ -151,7 +151,7 @@ void Particles::buildTree()
     double end_leaf_mass, end_leaf_posx, end_leaf_posy;
 
     // reset tree after having deleted everything
-    m_tree.m_s = 2*BOUNDS;
+    m_tree.m_s = (double) 2*BOUNDS;
     m_tree.m_children.resize(CHILD);
     for (unsigned int i=0; i<CHILD; i++)
     {
@@ -259,14 +259,14 @@ void Particles::buildTree()
 /**
 Method used to create a node when none exists in the tree
 */
-void QuadTree::createNode(int quadrant, double mass, double x, double y, int prof)
+void QuadTree::createNode(int quadrant, double mass, double x, double y, double prof)
 {
     m_children[quadrant] = new QuadTree();
     m_children[quadrant]->m_av_mass = mass;
     m_children[quadrant]->m_x_center = x;
     m_children[quadrant]->m_y_center = y;
-    m_s = prof / 2;
-    //std::cout << depth << " " << quadrant << std::endl;
+    m_children[quadrant]->m_s = prof / 2.0;
+    //std::cout << m_children[quadrant]->m_s << std::endl;
 }
 
 /**

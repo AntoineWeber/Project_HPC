@@ -108,7 +108,7 @@
        <use_app_dir_as_work_dir type="bool">true</use_app_dir_as_work_dir>
        <launch_app.app_to_launch type="string">/home/antoine/Documents/Project_HPC/Sequential_CPU/main.exe</launch_app.app_to_launch>
        <launch_app.app_parameters type="string"></launch_app.app_parameters>
-       <launch.userappworkdir type="string"></launch.userappworkdir>
+       <launch.userappworkdir type="string">/home/antoine/Documents/Project_HPC/Sequential_CPU/build</launch.userappworkdir>
        <launch_app.working_folder type="string">/home/antoine/Documents/Project_HPC/Sequential_CPU</launch_app.working_folder>
        <context>
         <contextValue>

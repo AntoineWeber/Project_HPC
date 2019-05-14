@@ -8,9 +8,9 @@
 #include <limits>
 #include <cmath>
 
-//#define SAVE true
+#define SAVE true
 
-#define THETA 0.5
+#define THETA 0.2
 #define N_ITERATIONS 100
 #define N_PARTICULES 65536
 #define CHILD 4
@@ -44,7 +44,7 @@ class QuadTree
 
         QuadTree();
         void quadtreeReset();
-        void createNode(int quadrant, double mass, double x, double y, int depth);
+        void createNode(int quadrant, double mass, double x, double y, double depth);
         void addBodyToNode(double mass, double x, double y);
         void computeBranchesComponent(double x, double y, double m, double &fx, double &fy);
 
