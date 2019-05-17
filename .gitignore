@@ -22,3 +22,5 @@ main
 Sequential_CPU/gmon\.out
 
 Sequential_CPU/trajectories\.txt
+
+Barnes_Hut_CUDA/trajectories\.txt

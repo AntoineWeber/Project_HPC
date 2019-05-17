@@ -1,6 +1,3 @@
-
-
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -9,14 +6,29 @@
 #include <random>
 #include <limits>
 #include <cmath>
+#include <chrono>
 
+#include "call_kernels.cuh"
 #include "kernels.cuh"
 
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+void initiateDevice();
 
-//#define SAVE true
 
+// small timer class
+class Timer
+{
+public:
+    Timer() : beg_(clock_::now()) {}
+    void reset() { beg_ = clock_::now(); }
+    double elapsed() const {
+        return std::chrono::duration_cast<second_>
+            (clock_::now() - beg_).count(); }
+
+private:
+    typedef std::chrono::high_resolution_clock clock_;
+    typedef std::chrono::duration<double, std::ratio<1> > second_;
+    std::chrono::time_point<clock_> beg_;
+};
 
 // CUDA error checking
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
@@ -37,58 +49,56 @@ int main(int argc, char** argv)
     // initialize time for TTS (time to solution)
     Timer t1;
 
+    initiateDevice();
+
     // define grid and block size
     dim3 gridSize(GRID_SIZE);
     dim3 blockSize(BLOCK_SIZE);
 
-    initiateDevice();
+    // instanciate particles class on GPU
+    Particles *allParticles;
+    gpuErrchk(cudaMalloc((void **) &allParticles, N_PARTICLES*sizeof(Particles)));
 
-    // allocate memory for the particle array
-    unsigned int size_particles = N_PARTICLES; // plane coordinates
-    unsigned int mem_size_particles = sizeof(double) * size_particles;
+    // instanciate the tree on GPU. Defined a maximum depth to have a fixed size.
+    QuadTree *allNodes;
 
-    double* d_pos_x;
-    double* d_pos_y;
-    double* d_vel_x;
-    double* d_vel_y;
-    double* d_acc_x;
-    double* d_acc_y;
-    double* d_mass;
+    // how many nodes in the tree
+    int num_nodes = 0;
+    for (unsigned int i = 0; i<MAX_DEPTH; i++)
+    {
+        num_nodes += pow(4.0,i);
+    }
+    gpuErrchk(cudaMalloc((void **) &allNodes, num_nodes * sizeof(QuadTree)))
+    // now set first node to get all particles
+    QuadTree first_node;
+    first_node.m_begin_particle = 0;
+    first_node.m_end_particle = N_PARTICLES - 1;
+    cudaMemcpy(allNodes, &first_node, sizeof(QuadTree), cudaMemcpyHostToDevice);
 
-    gpuErrchk(cudaMalloc((void**) &d_pos_x, mem_size_particles));
-    gpuErrchk(cudaMalloc((void**) &d_pos_y, mem_size_particles));
-    gpuErrchk(cudaMalloc((void**) &d_vel_x, mem_size_particles));
-    gpuErrchk(cudaMalloc((void**) &d_vel_y, mem_size_particles));
-    gpuErrchk(cudaMalloc((void**) &d_acc_x, mem_size_particles));
-    gpuErrchk(cudaMalloc((void**) &d_acc_y, mem_size_particles));
-    gpuErrchk(cudaMalloc((void**) &d_mass, mem_size_particles));
-
-    //initializeParticlesUni(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
-    initializeParticlesCircle(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
+    // initialize particle positions
+    initializeParticles(allParticles, gridSize, blockSize);
+    gpuErrchk(cudaDeviceSynchronize());
 
     // used for output saving
     #ifdef SAVE
-        double *h_pos_x = (double*)malloc(mem_size_particles);
-        double *h_pos_y = (double*)malloc(mem_size_particles);
-        std::vector<Position> output(N_PARTICLES);
+        Particles *h_partic = new Particles[N_PARTICLES];
 
         //open file
         std::ofstream myFile("trajectories.txt");
 
-        cudaMemcpy(h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
-        cudaMemcpy(h_pos_y, d_pos_y, mem_size_particles, cudaMemcpyDeviceToHost);
+        cudaMemcpy(h_partic, allParticles, N_PARTICLES*sizeof(Particles), cudaMemcpyDeviceToHost);
 
-        output = fillArray(h_pos_x, h_pos_y);
-        for(std::vector<Position>::const_iterator i = output.begin(); i != output.end(); ++i)
+        for(unsigned int i = 0; i<N_PARTICLES; i++)
         {
-            myFile << (*i).x << " " << (*i).y << "\n";
+            myFile << h_partic[i].m_x << " " << h_partic[i].m_y << "\n";
         }
     #endif
 
     double elapsed_ini = t1.elapsed();
     t1.reset();
 
-    for (unsigned int iter=0; iter<ITERATIONS; iter++)
+
+    for (unsigned int iter=0; iter<N_ITERATIONS; iter++)
     {
         /*
         resetTree()
@@ -96,13 +106,11 @@ int main(int argc, char** argv)
         computeDisplacement()
         */
         #ifdef SAVE
-            cudaMemcpy(h_pos_x, d_pos_x, mem_size_particles, cudaMemcpyDeviceToHost);
-            cudaMemcpy(h_pos_y, d_pos_y, mem_size_particles, cudaMemcpyDeviceToHost);
+            cudaMemcpy(h_partic, allParticles, N_PARTICLES*sizeof(Particles), cudaMemcpyDeviceToHost);
 
-            output = fillArray(h_pos_x, h_pos_y);
-            for(std::vector<Position>::const_iterator i = output.begin(); i != output.end(); ++i)
+            for(unsigned int i = 0; i<N_PARTICLES; i++)
             {
-                myFile << (*i).x << " " << (*i).y << "\n";
+                myFile << h_partic[i].m_x << " " << h_partic[i].m_y << "\n";
             }
         #endif
     }
@@ -113,16 +121,13 @@ int main(int argc, char** argv)
     std::cout << std::endl;
     std::cout << "Elapsed time for initialization : " << elapsed_ini << " s" << std::endl;
     std::cout << "Elapsed time for computation    : " << elapsed_compute << " s" << std::endl;
-    std::cout << "computing " << ITERATIONS << " steps with " << N_PARTICLES << " particles." <<std::endl;
+    std::cout << "computing " << N_ITERATIONS << " steps with " << N_PARTICLES << " particles." <<std::endl;
     std::cout << std::endl;
+    
+    #ifdef SAVE
+        free(h_partic);
+    #endif
 
-    gpuErrchk(cudaFree(d_pos_x));
-    gpuErrchk(cudaFree(d_pos_y));
-    gpuErrchk(cudaFree(d_vel_x));
-    gpuErrchk(cudaFree(d_vel_y));
-    gpuErrchk(cudaFree(d_acc_x));
-    gpuErrchk(cudaFree(d_acc_y));
-    gpuErrchk(cudaFree(d_mass));
 
     exit(EXIT_SUCCESS);
 }
@@ -154,16 +159,3 @@ void initiateDevice()
         printf("GPU Device %d: \"%s\" with compute capability %d.%d\n\n", devID, deviceProp.name, deviceProp.major, deviceProp.minor);
     }
 }
-
-#ifdef SAVE
-std::vector<Position> fillArray(double *pos_x, double *pos_y)
-{
-    std::vector<Position> output(N_PARTICLES);
-    for (int i=0; i<N_PARTICLES; i++)
-    {
-        output[i].x = pos_x[i];
-        output[i].y = pos_y[i];
-    }
-    return output;
-}
-#endif
