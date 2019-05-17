@@ -10,77 +10,13 @@
 #include <limits>
 #include <cmath>
 
-#include "call_kernels.cuh"
+#include "kernels.cuh"
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
 //#define SAVE true
 
-#define THETA 0.1
-#define N_ITERATIONS 50
-#define N_PARTICULES 1024
-#define CHILD 4
-#define G 6.67408e-11
-#define EPSILON 0.001
-#define MASS 100.0
-
-#define BOUNDS 5
-#define TIMESTEP 100
-#define CIRCLE_OFFSET 3
-#define FAR_SPACE 20
-
-struct BoxLimits
-{
-    double left,right,top,bottom;
-    int quadrant;
-};
-
-class QuadTree
-{
-    public:
-        double m_av_mass;
-        double m_x_center;
-        double m_y_center;
-        bool hasChildren;
-        int depth;
-        
-        std::vector<QuadTree*> m_children;
-
-        QuadTree();
-        void quadtreeReset();
-        void createNode(int quadrant, double mass, double x, double y, int depth);
-        void addBodyToNode(double mass, double x, double y);
-        void computeBranchesComponent(double x, double y, double m, double &fx, double &fy);
-
-};
-
-class Particles
-{
-    private:
-        std::vector<double> m_x;
-        std::vector<double> m_y;
-        std::vector<double> m_vx;
-        std::vector<double> m_vy;
-        std::vector<double> m_ax;
-        std::vector<double> m_ay;
-        std::vector<double> m_mass;
-
-        QuadTree m_tree;
-
-        double m_x_min, m_x_max, m_y_min, m_y_max;
-
-        void computePosition(double x, double y, BoxLimits &limits, bool updateLimits);
-    public:
-        Particles();
-        void initialize(std::string pattern);
-        void resetTree();
-        void buildTree();
-        void computeDisplacement();
-        #ifdef SAVE
-            void saveToFile(std::ofstream *file);
-        #endif
-};
 
 // CUDA error checking
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
