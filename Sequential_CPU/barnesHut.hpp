@@ -8,18 +8,18 @@
 #include <limits>
 #include <cmath>
 
-#define SAVE true
+//#define SAVE true
 
-#define THETA 0.2
+#define THETA 0.5
 #define N_ITERATIONS 100
 #define N_PARTICULES 65536
 #define CHILD 4
-#define G 6.67408e-11
-#define EPSILON 0.001
-#define MASS 10.0
+#define G 1.0
+#define EPSILON 0.0001
+#define MASS 1.0
 
-#define BOUNDS 5
-#define TIMESTEP 100
+#define BOUNDS 7
+#define TIMESTEP 0.001
 #define CIRCLE_OFFSET 3
 #define FAR_SPACE 30
 

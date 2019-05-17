@@ -18,3 +18,5 @@ main
 
 
 .vscode
+
+Sequential_CPU/gmon\.out

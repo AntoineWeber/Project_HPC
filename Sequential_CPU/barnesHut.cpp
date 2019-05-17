@@ -84,8 +84,8 @@ void Particles::initialize(std::string pattern)
     else if (pattern == "circle")
     {
         std::cout << "Initializing the particles in a square with a circle distribution" << std::endl;
-        std::default_random_engine generator(time(0));
-        std::uniform_real_distribution<double> radius(0, 2*BOUNDS-CIRCLE_OFFSET);
+        std::default_random_engine generator;
+        std::uniform_real_distribution<double> radius(CIRCLE_OFFSET, 2*BOUNDS);
         std::uniform_real_distribution<double> angle(0, 2*M_PI);
         double r, theta;
         // loop through all particles
@@ -105,7 +105,7 @@ void Particles::initialize(std::string pattern)
             else
             {
                 */
-            r = CIRCLE_OFFSET + radius(generator);
+            r = radius(generator);
             theta = angle(generator);
 
             m_mass[i] = MASS;
@@ -129,6 +129,33 @@ void Particles::resetTree()
 {
     m_tree.quadtreeReset();
 }
+
+
+/*
+void Particles::computeBoundingBox()
+{
+    for (unsigned int i=0; i<N_PARTICULES; i++)
+    {
+        if (m_x[i] > m_x_max)
+        {
+            m_x_max = m_x[i];
+        }
+        else if (m_x[i] < m_x_min)
+        {
+            m_x_min = m_x[i];
+        }
+        
+        if (m_y[i] > m_y_max)
+        {
+            m_y_max = m_y[i];
+        }
+        else if (m_y[i] < m_y_min)
+        {
+            m_y_min = m_y[i];
+        }
+    }
+}
+*/
 
 /**
 Method building the barnes-hut tree
@@ -240,12 +267,10 @@ void Particles::buildTree()
                             curr_node->m_children[quadrant]->addBodyToNode(m_mass[i], m_x[i], m_y[i]);
                             // else create internal nodes until they go to different quadrants.
                             // need to call this function to cut the space in 4
-                            computePosition(m_x[i], m_y[i], limits, true);
+                            computePosition(end_leaf_posx, end_leaf_posy, limits, true);
                             quadrant_internal_point = limits.quadrant;
-                            curr_node->m_children[quadrant]->createNode(quadrant_internal_point, m_mass[i], m_x[i], m_y[i],
+                            curr_node->m_children[quadrant]->createNode(quadrant_internal_point, end_leaf_mass, end_leaf_posx, end_leaf_posy,
                                                                          curr_node->m_children[quadrant]->m_s);
-                            curr_node->m_children[quadrant]->m_children[quadrant_internal_point]->addBodyToNode(end_leaf_mass,
-                                                                                                 end_leaf_posx, end_leaf_posy);
                             curr_node = curr_node->m_children[quadrant];
                             quadrant = quadrant_internal_point;
                         } 
@@ -343,7 +368,7 @@ void Particles::computePosition(double x, double y, BoxLimits &limits, bool upda
     }
     else
     {
-        std::cout << "dessu" << std::endl;
+        std::cout << "Should not happen" << std::endl;
         exit(0);
     }
     
@@ -376,11 +401,11 @@ void Particles::computeDisplacement()
         m_ax[i] = fx / m_mass[i];
         m_ay[i] = fy / m_mass[i];
 
-        m_x[i] += 0.5*m_ax[i]*TIMESTEP*TIMESTEP + m_vx[i]*TIMESTEP;
-        m_y[i] += 0.5*m_ay[i]*TIMESTEP*TIMESTEP + m_vy[i]*TIMESTEP;
-
         m_vx[i] += m_ax[i]*TIMESTEP;
         m_vy[i] += m_ay[i]*TIMESTEP;
+
+        m_x[i] += 0.5*m_ax[i]*TIMESTEP*TIMESTEP + m_vx[i]*TIMESTEP;
+        m_y[i] += 0.5*m_ay[i]*TIMESTEP*TIMESTEP + m_vy[i]*TIMESTEP;
     }
 }
 
@@ -412,11 +437,13 @@ void QuadTree::computeBranchesComponent(double x, double y, double m, double &fx
             else
             {
                 // compute the quotient s/r
-                s = m_s;
+                s = m_children[i]->m_s;
 
                 // if too far, consider as a single body
+                //std::cout << s/r << " " << std::endl;
                 if (s / r < THETA)
                 {
+                    //std::cout << r << std::endl;
                     // still checks for EPSILON as theta could be as small as wanted.
                     if (r > EPSILON)
                     {
