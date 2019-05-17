@@ -20,3 +20,5 @@ main
 .vscode
 
 Sequential_CPU/gmon\.out
+
+Sequential_CPU/trajectories\.txt
