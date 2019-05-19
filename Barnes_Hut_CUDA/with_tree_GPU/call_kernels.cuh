@@ -23,7 +23,7 @@
 #define WARP_SIZE 32
 
 // 3 is the margin that I take
-#define MAX_DEPTH (int)(log(N_PARTICLES) / log(4) + 3)
+#define MAX_DEPTH (int)(log(N_PARTICLES) / log(4)) + 3
 
 #define X_MIN -BOUNDS
 #define X_MAX BOUNDS
@@ -52,6 +52,9 @@ class QuadTree
     public:
         int m_index_node, m_begin_particle, m_end_particle;
         double m_min_x, m_max_x, m_min_y, m_max_y;
+
+        double m_center_mass, m_center_x, m_center_y;
+        bool hasChildren;
 };
 
 void initializeParticles(Particles* allParticles, dim3 gridSize, dim3 blockSize);
