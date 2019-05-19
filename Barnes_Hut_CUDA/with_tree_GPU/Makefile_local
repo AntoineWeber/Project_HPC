@@ -85,21 +85,21 @@ SRCS=$(wildcard *.c)
 CPP_SRCS=$(wildcard *.cpp)
 CU_SRCS=$(wildcard *.cu)
 OBJS=$(SRCS:.c=.o) $(CPP_SRCS:.cpp=.o)  $(CU_SRCS:.cu=.o)
-EXE=nbody_brute
+EXE=nbody
 
 #Target Rules
 
 %.o:%.cpp
-	$(CC) -c $(CFLAGS) $(INCLUDES) $< -o $@
+	$(CC) -c $(CFLAGS)  $(INCLUDES) $< -o $@
 
 %.o:%.c
 	$(CC) -c $(CFLAGS) $(INCLUDES) $< -o $@
 
 %.o:%.cu
-	$(NVCC) $(NVCCFLAGS) $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) $(INCLUDES) -rdc=true -lcudadevrt -c $< -o $@
+	$(NVCC) $(NVCCFLAGS) $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) -rdc=true $(INCLUDES) -c $< -o $@
 
 $(EXE):$(OBJS)
-	$(CC) $(INCLUDES) $(OBJS) -L $(CUDA_LIB_PATH) -l$(CL_LIBS) $(LDFLAGS) $(EXTRA_LDFLAGS) -lcudadevrt -o $(EXE)
+	$(CC) -dlink $(INCLUDES) $(OBJS) -L $(CUDA_LIB_PATH) -l$(CL_LIBS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o $(EXE)}
 
 clean:
 	rm -rf $(OBJS) $(CU_OBJS) $(EXE)
