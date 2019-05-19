@@ -12,6 +12,7 @@
 #include "kernels.cuh"
 
 void initiateDevice();
+void resetTree(QuadTree *tree, int n_nodes, QuadTree first_n);
 
 
 // small timer class
@@ -68,12 +69,17 @@ int main(int argc, char** argv)
     {
         num_nodes += pow(4.0,i);
     }
-    gpuErrchk(cudaMalloc((void **) &allNodes, num_nodes * sizeof(QuadTree)))
     // now set first node to get all particles
     QuadTree first_node;
     first_node.m_begin_particle = 0;
     first_node.m_end_particle = N_PARTICLES - 1;
-    cudaMemcpy(allNodes, &first_node, sizeof(QuadTree), cudaMemcpyHostToDevice);
+    first_node.m_min_x = -FAR_SPACE;
+    first_node.m_max_x = FAR_SPACE;
+    first_node.m_min_y = -FAR_SPACE;
+    first_node.m_max_y = FAR_SPACE;
+
+    // generates a warning at first, no need to worry.
+    resetTree(allNodes, num_nodes, first_node);
 
     // initialize particle positions
     initializeParticles(allParticles, gridSize, blockSize);
@@ -100,9 +106,11 @@ int main(int argc, char** argv)
 
     for (unsigned int iter=0; iter<N_ITERATIONS; iter++)
     {
+        std::cout << "iteration : " << iter << std::endl;
+        resetTree(allNodes, num_nodes, first_node);
+        constructTree(allParticles, allNodes, 0);
+        cudaDeviceSynchronize();
         /*
-        resetTree()
-        buildTree()
         computeDisplacement()
         */
         #ifdef SAVE
@@ -158,4 +166,20 @@ void initiateDevice()
     {
         printf("GPU Device %d: \"%s\" with compute capability %d.%d\n\n", devID, deviceProp.name, deviceProp.major, deviceProp.minor);
     }
+}
+
+
+void resetTree(QuadTree *tree, int n_nodes, QuadTree first_n)
+{
+    // free the tree
+    if (tree != nullptr)
+    {
+        gpuErrchk(cudaFree(tree));
+    }
+
+    // allocate an empty one
+    gpuErrchk(cudaMalloc((void **) &tree, n_nodes * sizeof(QuadTree)));
+
+    // now set first node to get all particles
+    cudaMemcpy(tree, &first_n, sizeof(QuadTree), cudaMemcpyHostToDevice);
 }

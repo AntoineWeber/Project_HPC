@@ -4,7 +4,7 @@
 #define __CALL_KERNELS_CUH__
 
 #define THETA 0.3
-#define N_ITERATIONS 100
+#define N_ITERATIONS 1
 #define CHILD 4
 #define G 1.0
 #define EPSILON 0.001
@@ -50,7 +50,7 @@ class Particles
 class QuadTree
 {
     public:
-        int m_index_node, m_begin_particle, m_end_particle;
+        int m_begin_particle, m_end_particle;
         double m_min_x, m_max_x, m_min_y, m_max_y;
 
         double m_center_mass, m_center_x, m_center_y;
@@ -58,5 +58,6 @@ class QuadTree
 };
 
 void initializeParticles(Particles* allParticles, dim3 gridSize, dim3 blockSize);
+void constructTree(Particles* allParticles, QuadTree* allNodes, int depth);
 
 #endif
