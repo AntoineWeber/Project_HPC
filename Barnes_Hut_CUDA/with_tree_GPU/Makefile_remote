@@ -83,7 +83,7 @@ CL_LIBS=OpenCL
 SRCS=$(wildcard *.c)
 CPP_SRCS=$(wildcard *.cpp)
 CU_SRCS=$(wildcard *.cu)
-OBJS=$(SRCS:.c=.o) $(CPP_SRCS:.cpp=.o)  $(CU_SRCS:.cu=.o)
+OBJS=$(SRCS:.c=.o) $(CPP_SRCS:.cpp=.o)  $(CU_SRCS:.cu=.o) kernels_link.o call_kernels_link.o
 EXE=nbody
 
 #Target Rules
@@ -97,8 +97,12 @@ $(EXE):$(OBJS)
 %.o:%.c
 	$(CC) -c $(CFLAGS) $(INCLUDES) $< -o $@
 
-%.o:%.cu
-	$(NVCC) $(NVCCFLAGS) $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) $(INCLUDES) -rdc=true -lcudadevrt -c $< -o $@
+kernels.o:kernels.cu
+	$(NVCC) $(NVCCFLAGS) $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) $(INCLUDES) -dc -rdc=true -lcudadevrt -c $< -o $@
+	$(NVCC) -dlink $(GENCODE_FLAGS) -o kernels_link.o $@
 
+call_kernels.o:call_kernels.cu
+	$(NVCC) $(NVCCFLAGS) $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) $(INCLUDES) -dc -rdc=true -lcudadevrt -c $< -o $@
+	$(NVCC) -dlink $(GENCODE_FLAGS) -o call_kernels_link.o $@
 clean:
 	rm -rf $(OBJS) $(CU_OBJS) $(EXE)
