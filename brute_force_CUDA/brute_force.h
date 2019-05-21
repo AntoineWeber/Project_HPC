@@ -2,20 +2,20 @@
 #ifndef _BRUTE_FORCE_H_
 #define _BRUTE_FORCE_H_
 
-#define SAVE true
+//#define SAVE true
 
-#define N_PARTICLES 4096
-#define GRID_SIZE 32
-#define BLOCK_SIZE 32
+#define N_PARTICLES 16384
+#define GRID_SIZE 256
+#define BLOCK_SIZE 256
 
 #define GRID_MAX 5
 #define GRID_MIN -GRID_MAX
 #define R_MAX 7
 #define R_OFFSET 3
 
-#define G 6.67408e-11
-#define PARTICLE_MASS 100
-#define TIMESTEP 100
+#define G 1.0
+#define PARTICLE_MASS 0.001
+#define TIMESTEP 0.001
 #define ITERATIONS 100
 #define EPSILON 0.001
 
