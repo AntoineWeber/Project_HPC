@@ -84,22 +84,26 @@ CL_LIBS=OpenCL
 SRCS=$(wildcard *.c)
 CPP_SRCS=$(wildcard *.cpp)
 CU_SRCS=$(wildcard *.cu)
-OBJS=$(SRCS:.c=.o) $(CPP_SRCS:.cpp=.o)  $(CU_SRCS:.cu=.o)
+OBJS=$(SRCS:.c=.o) $(CPP_SRCS:.cpp=.o)  $(CU_SRCS:.cu=.o) kernels_link.o call_kernels_link.o
 EXE=nbody
 
 #Target Rules
 
+$(EXE):$(OBJS)
+	$(CC) $(INCLUDES) $(OBJS) -L $(CUDA_LIB_PATH) -l$(CL_LIBS) $(LDFLAGS) $(EXTRA_LDFLAGS) -lcudadevrt -o $(EXE)
+
 %.o:%.cpp
-	$(CC) -c $(CFLAGS)  $(INCLUDES) $< -o $@
+	$(CC) -c $(CFLAGS) $(INCLUDES) $< -o $@
 
 %.o:%.c
 	$(CC) -c $(CFLAGS) $(INCLUDES) $< -o $@
 
-%.o:%.cu
-	$(NVCC) $(NVCCFLAGS) $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) -rdc=true $(INCLUDES) -c $< -o $@
+kernels.o:kernels.cu
+	$(NVCC) $(NVCCFLAGS) $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) $(INCLUDES) -dc -rdc=true -lcudadevrt -c $< -o $@
+	$(NVCC) -dlink $(GENCODE_FLAGS) -o kernels_link.o $@
 
-$(EXE):$(OBJS)
-	$(CC) -dlink $(INCLUDES) $(OBJS) -L $(CUDA_LIB_PATH) -l$(CL_LIBS) $(LDFLAGS) $(EXTRA_LDFLAGS) -o $(EXE)}
-
+call_kernels.o:call_kernels.cu
+	$(NVCC) $(NVCCFLAGS) $(EXTRA_NVCCFLAGS) $(GENCODE_FLAGS) $(INCLUDES) -dc -rdc=true -lcudadevrt -c $< -o $@
+	$(NVCC) -dlink $(GENCODE_FLAGS) -o call_kernels_link.o $@
 clean:
 	rm -rf $(OBJS) $(CU_OBJS) $(EXE)

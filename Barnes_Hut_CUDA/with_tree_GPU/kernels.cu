@@ -36,10 +36,10 @@ __global__ void initialize_particles_circle(Particles* allParticles)
 
 __global__ void build_tree(Particles* allParticles, QuadTree* allNodes, int depth)
 {
-    if (depth == 5)
+    if (depth == 3)
     {
         return;
     }
     printf("depth : %d and blockid : %d", depth, blockIdx.x);
-    build_tree<<<4,128>>>(allParticles, allNodes, depth+1);
+    build_tree<<<1,4>>>(allParticles, allNodes, depth+1);
 }
