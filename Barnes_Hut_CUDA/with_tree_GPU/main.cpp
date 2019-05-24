@@ -108,7 +108,7 @@ int main(int argc, char** argv)
     {
         std::cout << "iteration : " << iter << std::endl;
         resetTree(allNodes, num_nodes, first_node);
-        constructTree(allParticles, allNodes, 0);
+        constructTree(allParticles, allNodes, 0, 1, 0);
         cudaDeviceSynchronize();
         /*
         computeDisplacement()

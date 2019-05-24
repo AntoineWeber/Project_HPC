@@ -12,6 +12,6 @@
 #include "call_kernels.cuh"
 
 __global__ void initialize_particles_circle(Particles* allParticles);
-__global__ void build_tree(Particles* allParticles, QuadTree* allNodes, int depth);
+__global__ void build_tree(Particles* allParticles, QuadTree* allNodes, int depth, int n_level_nodes, int blockind);
 
 #endif

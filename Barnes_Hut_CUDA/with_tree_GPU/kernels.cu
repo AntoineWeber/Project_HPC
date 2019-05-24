@@ -34,12 +34,18 @@ __global__ void initialize_particles_circle(Particles* allParticles)
     }
 }
 
-__global__ void build_tree(Particles* allParticles, QuadTree* allNodes, int depth)
+__global__ void build_tree(Particles* allParticles, QuadTree* allNodes, int depth, int n_level_nodes, int blockind)
 {
+    printf("block : %d \n", blockIdx.x);
+    int identifier = depth*(blockIdx.x)*n_level_nodes + blockIdx.x;
+
     if (depth == 3)
     {
+        // fill what needs to be filled
+        //printf("max depth \n");
         return;
     }
-    printf("depth : %d and blockid : %d \n", depth, blockIdx.x);
-    build_tree<<<1,4>>>(allParticles, allNodes, depth+1);
+
+    //printf("identifier : %d \n", identifier);
+    build_tree<<<4,1>>>(allParticles, allNodes, depth+1, n_level_nodes*4);
 }

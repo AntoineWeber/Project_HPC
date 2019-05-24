@@ -58,6 +58,6 @@ class QuadTree
 };
 
 void initializeParticles(Particles* allParticles, dim3 gridSize, dim3 blockSize);
-void constructTree(Particles* allParticles, QuadTree* allNodes, int depth);
+void constructTree(Particles* allParticles, QuadTree* allNodes, int depth, int n_level_nodes, int blockind);
 
 #endif
