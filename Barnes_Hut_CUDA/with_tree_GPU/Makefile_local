@@ -21,7 +21,7 @@ endif
 DARWIN = $(strip $(findstring DARWIN, $(OSUPPER)))
 
 # Location of the CUDA Toolkit binaries and libraries
-CUDA_PATH       ?= /usr/lib/cuda
+CUDA_PATH       ?= /usr/local/cuda-10.1
 CUDA_INC_PATH   ?= $(CUDA_PATH)/include
 CUDA_BIN_PATH   ?= $(CUDA_PATH)/bin
 ifneq ($(DARWIN),)
@@ -36,7 +36,7 @@ endif
 
 
 # Common binaries
-NVCC            ?= /usr/bin/nvcc
+NVCC            ?= /usr/local/cuda-10.1/bin/nvcc
 CC 				=  g++
 
 # Extra user flags
