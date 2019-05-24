@@ -30,3 +30,5 @@ Barnes_Hut_CUDA/with_tree_GPU/trajectories\.txt
 brute_force_CUDA/brute_nbody/
 
 figs/
+
+Barnes_Hut_CUDA/with_tree_GPU/nbody

@@ -40,6 +40,6 @@ __global__ void build_tree(Particles* allParticles, QuadTree* allNodes, int dept
     {
         return;
     }
-    printf("depth : %d and blockid : %d", depth, blockIdx.x);
+    printf("depth : %d and blockid : %d \n", depth, blockIdx.x);
     build_tree<<<1,4>>>(allParticles, allNodes, depth+1);
 }
