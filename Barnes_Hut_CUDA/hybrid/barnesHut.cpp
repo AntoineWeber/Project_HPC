@@ -1,11 +1,12 @@
 #include "barnesHut.hpp"
 
 
+
 /**
 Constructor of the class Quadtree. Initialize every value to 0 and the pointers to the 4 quadrants to
 null.
 */
-Node::Node()
+__host__ Node::Node()
 {
     m_av_mass = 0.0;
     m_x_center = 0.0;

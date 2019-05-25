@@ -1,4 +1,7 @@
 
+#ifndef __BHUT_HPP__
+#define __BHUT_HPP__
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -8,6 +11,8 @@
 #include <limits>
 #include <cmath>
 
+#include <cuda.h>
+#include <cuda_runtime_api.h>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
@@ -48,7 +53,7 @@ class Node
 
         bool hasChildren;
 
-        Node();
+        __host__ Node();
 };
 
 class Particles
@@ -80,3 +85,5 @@ class Particles
 };
 
 void updateOffsets(int &absolOff, int &depthOff, int &nNode, int &depth);
+
+#endif
