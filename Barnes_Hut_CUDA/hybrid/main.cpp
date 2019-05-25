@@ -63,7 +63,17 @@ int main(int argc, char** argv)
     #endif
 
     t1.reset();
-    Particles allParticles;
+
+    int num_nodes = 0;
+    for (unsigned int i = 0; i<MAX_DEPTH; i++)
+    {
+        num_nodes += pow(4.0,i);
+    }
+    std::cout << "generating " << num_nodes << " nodes." << std::endl;
+
+    Particles allParticles(num_nodes);
+
+    thrust::device_vector<Node> d_tree = allParticles.m_tree;
 
     // copy vectors to GPU
     thrust::device_vector<double> d_x  = allParticles.m_x;
@@ -99,11 +109,17 @@ int main(int argc, char** argv)
     for (unsigned int i=0; i<N_ITERATIONS; i++)
     {
         std::cout << "iteration " << i << std::endl;
-        allParticles.resetTree();
+        allParticles.resetTree(num_nodes);
         allParticles.buildTree();
-
+        d_tree = allParticles.m_tree;
+        computeDisplacements(thrust::raw_pointer_cast(&d_tree[0]), thrust::raw_pointer_cast(&d_x[0]),
+                             thrust::raw_pointer_cast(&d_y[0]), thrust::raw_pointer_cast(&d_vx[0]),
+                             thrust::raw_pointer_cast(&d_vy[0]), thrust::raw_pointer_cast(&d_ax[0]),
+                             thrust::raw_pointer_cast(&d_ay[0]), thrust::raw_pointer_cast(&d_mass[0]), gridSize, blockSize);
 
         #ifdef SAVE
+            allParticles.m_x = d_x;
+            allParticles.m_y = d_y;
             allParticles.saveToFile(&myFile);
         #endif
     }

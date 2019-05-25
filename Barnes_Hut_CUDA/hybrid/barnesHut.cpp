@@ -17,7 +17,7 @@ Node::Node()
 /**
 Constructor for the class particle.
 */
-Particles::Particles()
+Particles::Particles(int n_nodes)
 {
     m_x.resize(N_PARTICULES);
     m_y.resize(N_PARTICULES);
@@ -32,16 +32,16 @@ Particles::Particles()
     m_y_min = -FAR_SPACE;
     m_y_max = FAR_SPACE;
 
-    m_tree.resize(N_PARTICULES);
+    m_tree = thrust::host_vector<Node>(n_nodes, Node());
 }
 
 /**
 To call the quadtree reset from the particle class.
 */
-void Particles::resetTree()
+void Particles::resetTree(int n_nodes)
 {
     m_tree.clear();
-    m_tree.resize(N_PARTICULES);
+    m_tree = thrust::host_vector<Node>(n_nodes, Node());
 }
 
 /**
@@ -95,7 +95,7 @@ void Particles::buildTree()
             addBodyToNode(0, m_x[i], m_y[i], m_mass[i]);
         }
         
-        depth = 0;
+        depth = 1;
         done = false;
         depthOffset = 0;
         absoluteOffset = 1;
@@ -103,45 +103,52 @@ void Particles::buildTree()
         // descend along the tree until found the right branch
         while(!done)
         {
-            if (depth >= MAX_DEPTH)
+            if (depth == MAX_DEPTH-1)
             {
-                //do something
-            }
-
-            if (depth != 0)
-            {
-                addBodyToNode(absoluteOffset + depthOffset, m_x[i], m_y[i], m_mass[i]);
+                break;
             }
 
             //locate the particle
-            std::cout << "1" << std::endl;
             computePosition(m_x[i], m_y[i], limits, true);
             quadrant = limits.quadrant;
-
-            // if no child at this node, create it and go to next particle
-            if (m_tree[absoluteOffset + depthOffset + quadrant].m_av_mass == 0)
+            
+            // if first layer, move depthOffset to the quadrant to be on the right node
+            if (absoluteOffset == 1)
             {
-                createNode(absoluteOffset + depthOffset + quadrant, m_x[i], m_y[i], m_mass[i]);
+                depthOffset = quadrant;
+            }
+            // else add the quadrant to be on the right node
+            else
+            {
+                depthOffset += quadrant;
+            }
+            
+            // if no child at this node, create it and go to next particle
+            if (m_tree[absoluteOffset + depthOffset].m_av_mass == 0)
+            {
+                createNode(absoluteOffset + depthOffset, m_x[i], m_y[i], m_mass[i]);
                 done = true;
             }
             // if already exists, go deeper down the tree
             else
             {
-                if (m_tree[absoluteOffset + depthOffset + quadrant].hasChildren == true)
+                if (m_tree[absoluteOffset + depthOffset].hasChildren == true)
                 {
-                    // node has already children, go deeper
-                    addBodyToNode(absoluteOffset + depthOffset + quadrant, m_x[i], m_y[i], m_mass[i]);
-                    updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth, quadrant);
+                    // add the point to the node
+                    addBodyToNode(absoluteOffset + depthOffset, m_x[i], m_y[i], m_mass[i]);
+
+                    // update to the start of the children. Specific quadrant will be updated beginning
+                    // of the next while iteration.
+                    updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth);
                 }
                 else
                 {
                     // node has no children, hence is not an internal node. Have to create the rest of the branch and bring both
                     // body down : the particle considered and the considered node being a particle.
                     constructInternalNode = false;
-                    end_leaf_mass = m_tree[absoluteOffset + depthOffset + quadrant].m_av_mass;
-                    end_leaf_posx = m_tree[absoluteOffset + depthOffset + quadrant].m_x_center;
-                    end_leaf_posy = m_tree[absoluteOffset + depthOffset + quadrant].m_y_center;
-
+                    end_leaf_mass = m_tree[absoluteOffset + depthOffset].m_av_mass;
+                    end_leaf_posx = m_tree[absoluteOffset + depthOffset].m_x_center;
+                    end_leaf_posy = m_tree[absoluteOffset + depthOffset].m_y_center;
                     // if tree not destroyed properly, without the forcing computation,
                     // can get stuck in an infinite loop here trying to separate the same particle.
                     // if really not lucky, the randomization may have created twice the same particle.
@@ -153,19 +160,25 @@ void Particles::buildTree()
 
                     while(!constructInternalNode)
                     {
-                        std::cout << "2" << std::endl;
+                        if (depth == MAX_DEPTH-1)
+                        {
+                            // add particule before quitting
+                            addBodyToNode(absoluteOffset + depthOffset + quadrant_internal_node,  m_x[i], m_y[i], m_mass[i]);
+                            break;
+                        }
                         computePosition(m_x[i], m_y[i], limits, false);
                         quadrant_internal_point = limits.quadrant;
-                        std::cout << "3" << std::endl;
                         computePosition(end_leaf_posx, end_leaf_posy, limits, false);
                         quadrant_internal_node = limits.quadrant;
                         // if after having cut the space they both go to a different quadrant, construct both nodes and go to next particle
                         if (quadrant_internal_point != quadrant_internal_node)
                         {
-                            addBodyToNode(absoluteOffset+depthOffset+quadrant, m_x[i], m_y[i], m_mass[i]);
-                            m_tree[absoluteOffset+depthOffset+quadrant].hasChildren = true;
+                            // add the point to the parent node
+                            addBodyToNode(absoluteOffset+depthOffset, m_x[i], m_y[i], m_mass[i]);
+                            m_tree[absoluteOffset+depthOffset].hasChildren = true;
 
-                            updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth, 0);
+                            // create the two children
+                            updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth);
 
                             createNode(absoluteOffset + depthOffset + quadrant_internal_point, m_x[i], m_y[i], m_mass[i]);
                             createNode(absoluteOffset + depthOffset + quadrant_internal_node, end_leaf_posx, end_leaf_posy, end_leaf_mass);
@@ -176,19 +189,22 @@ void Particles::buildTree()
                         } 
                         else
                         {
-                            addBodyToNode(absoluteOffset+depthOffset+quadrant, m_x[i], m_y[i], m_mass[i]);
-                            m_tree[absoluteOffset+depthOffset+quadrant].hasChildren = true;
+                            // add the point to the parent node
+                            addBodyToNode(absoluteOffset+depthOffset, m_x[i], m_y[i], m_mass[i]);
+                            m_tree[absoluteOffset+depthOffset].hasChildren = true;
 
                             // else create internal nodes until they go to different quadrants.
                             // need to call this function to cut the space in 4
-                            std::cout << "4" << std::endl;
                             computePosition(end_leaf_posx, end_leaf_posy, limits, true);
                             quadrant_internal_node = limits.quadrant;
 
-                            updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth, quadrant_internal_node);
+                            // create children in the same state as the entering of the while loop
+                            // (end_leaf being at the end) and iterate until you can separate them
+                            // or went to max depth.
+                            updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth);
+                            depthOffset += quadrant_internal_node;
 
                             createNode(absoluteOffset + depthOffset, end_leaf_posx, end_leaf_posy, end_leaf_mass);
-                            quadrant = quadrant_internal_node;
                         } 
                     }
                 }
@@ -207,12 +223,8 @@ void Particles::createNode(int offset, double x, double y, double m)
 
 void Particles::addBodyToNode(int offset, double x, double y, double m)
 {
-    std::cout << "hm " << m_tree[offset].m_av_mass << std::endl;
-
     m_tree[offset].m_x_center += x * m / m_tree[offset].m_av_mass;
     m_tree[offset].m_y_center += y * m / m_tree[offset].m_av_mass;
-
-    std::cout << " " << x << " " << y << " " << m << std::endl;
 
     m_tree[offset].m_x_center = m_tree[offset].m_x_center * m_tree[offset].m_av_mass / (m_tree[offset].m_av_mass + m);
     m_tree[offset].m_y_center = m_tree[offset].m_y_center * m_tree[offset].m_av_mass / (m_tree[offset].m_av_mass + m);
@@ -220,9 +232,9 @@ void Particles::addBodyToNode(int offset, double x, double y, double m)
     m_tree[offset].m_av_mass += m;
 }
 
-void updateOffsets(int &absolOff, int &depthOff, int &nNode, int &depth, int quadrant)
+void updateOffsets(int &absolOff, int &depthOff, int &nNode, int &depth)
 {
-    depthOff = depthOff * 4 + quadrant;
+    depthOff = depthOff * 4;
     absolOff += nNode;
     nNode *= 4;
     depth += 1;

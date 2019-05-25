@@ -11,7 +11,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
-#define SAVE true
+//#define SAVE true
 
 #define THETA 0.5
 #define N_ITERATIONS 100
@@ -29,8 +29,8 @@
 #define GRID_SIZE 16
 #define BLOCK_SIZE 16
 
-// 3 is the margin that I take
-#define MAX_DEPTH (int)(log(N_PARTICULES) / log(4)) + 5
+
+#define MAX_DEPTH 10
 
 struct BoxLimits
 {
@@ -71,12 +71,12 @@ class Particles
         void addBodyToNode(int offset, double x, double y, double m);
         void createNode(int offset, double x, double y, double m);
 
-        Particles();
-        void resetTree();
+        Particles(int n_nodes);
+        void resetTree(int n_nodes);
         void buildTree();
         #ifdef SAVE
             void saveToFile(std::ofstream *file);
         #endif
 };
 
-void updateOffsets(int &absolOff, int &depthOff, int &nNode, int &depth, int quadrant);
+void updateOffsets(int &absolOff, int &depthOff, int &nNode, int &depth);
