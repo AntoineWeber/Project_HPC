@@ -36,3 +36,5 @@ Barnes_Hut_CUDA/with_tree_GPU/nbody
 Barnes_Hut_CUDA/hybrid/trajectories\.txt
 
 Barnes_Hut_CUDA/hybrid/nbody
+
+Barnes_Hut_CUDA/hybrid/animation\.mp4

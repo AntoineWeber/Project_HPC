@@ -16,7 +16,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
-//#define SAVE true
+#define SAVE true
 
 #define THETA 0.5
 #define N_ITERATIONS 100
@@ -30,9 +30,9 @@
 #define CIRCLE_OFFSET 3
 #define FAR_SPACE 30
 
-#define N_PARTICULES 1024
-#define GRID_SIZE 16
-#define BLOCK_SIZE 16
+#define N_PARTICULES 16384
+#define GRID_SIZE 128
+#define BLOCK_SIZE 128
 
 
 #define MAX_DEPTH 10
@@ -52,7 +52,8 @@ struct Node
 
     bool hasChildren;
 
-    __host__ __device__ Node();
+    __host__ Node();
+
 };
 
 class Particles
