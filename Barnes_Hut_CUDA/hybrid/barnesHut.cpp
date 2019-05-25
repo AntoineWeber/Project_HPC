@@ -33,7 +33,7 @@ Particles::Particles(int n_nodes)
     m_y_min = -FAR_SPACE;
     m_y_max = FAR_SPACE;
 
-    m_tree = thrust::host_vector<Node>(n_nodes, Node());
+    m_tree = new Node[n_nodes];
 }
 
 /**
@@ -41,8 +41,8 @@ To call the quadtree reset from the particle class.
 */
 void Particles::resetTree(int n_nodes)
 {
-    m_tree.clear();
-    m_tree = thrust::host_vector<Node>(n_nodes, Node());
+    free(m_tree);
+    m_tree = new Node[n_nodes];
 }
 
 /**
@@ -66,9 +66,7 @@ void Particles::buildTree()
     int nDepthNode = 1;
     int depth = 0;
 
-    // reset tree after having deleted everything
-    m_tree[0].m_s = (double) 2*BOUNDS;
-    m_tree[0].hasChildren = true;
+    double prev_prof;
 
     BoxLimits limits;
 
@@ -89,13 +87,15 @@ void Particles::buildTree()
         // add particle to root node
         if (i == 0)
         {
-            createNode(0, m_x[i], m_y[i], m_mass[i]);
+            createNode(0, m_x[i], m_y[i], m_mass[i], (double) 2*2*FAR_SPACE);
+            m_tree[0].hasChildren = true;
         }
         else
         {
             addBodyToNode(0, m_x[i], m_y[i], m_mass[i]);
         }
         
+        prev_prof = m_tree[0].m_s;
         depth = 1;
         done = false;
         depthOffset = 0;
@@ -127,7 +127,7 @@ void Particles::buildTree()
             // if no child at this node, create it and go to next particle
             if (m_tree[absoluteOffset + depthOffset].m_av_mass == 0)
             {
-                createNode(absoluteOffset + depthOffset, m_x[i], m_y[i], m_mass[i]);
+                createNode(absoluteOffset + depthOffset, m_x[i], m_y[i], m_mass[i], prev_prof);
                 done = true;
             }
             // if already exists, go deeper down the tree
@@ -140,7 +140,7 @@ void Particles::buildTree()
 
                     // update to the start of the children. Specific quadrant will be updated beginning
                     // of the next while iteration.
-                    updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth);
+                    updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth, prev_prof);
                 }
                 else
                 {
@@ -179,10 +179,10 @@ void Particles::buildTree()
                             m_tree[absoluteOffset+depthOffset].hasChildren = true;
 
                             // create the two children
-                            updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth);
+                            updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth, prev_prof);
 
-                            createNode(absoluteOffset + depthOffset + quadrant_internal_point, m_x[i], m_y[i], m_mass[i]);
-                            createNode(absoluteOffset + depthOffset + quadrant_internal_node, end_leaf_posx, end_leaf_posy, end_leaf_mass);
+                            createNode(absoluteOffset + depthOffset + quadrant_internal_point, m_x[i], m_y[i], m_mass[i], prev_prof);
+                            createNode(absoluteOffset + depthOffset + quadrant_internal_node, end_leaf_posx, end_leaf_posy, end_leaf_mass, prev_prof);
 
                             
                             constructInternalNode = true;
@@ -202,10 +202,10 @@ void Particles::buildTree()
                             // create children in the same state as the entering of the while loop
                             // (end_leaf being at the end) and iterate until you can separate them
                             // or went to max depth.
-                            updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth);
+                            updateOffsets(absoluteOffset, depthOffset, nDepthNode, depth, prev_prof);
                             depthOffset += quadrant_internal_node;
 
-                            createNode(absoluteOffset + depthOffset, end_leaf_posx, end_leaf_posy, end_leaf_mass);
+                            createNode(absoluteOffset + depthOffset, end_leaf_posx, end_leaf_posy, end_leaf_mass, prev_prof);
                         } 
                     }
                 }
@@ -214,12 +214,13 @@ void Particles::buildTree()
     }
 }
 
-void Particles::createNode(int offset, double x, double y, double m)
+void Particles::createNode(int offset, double x, double y, double m, double prof)
 {
     m_tree[offset].m_x_center = x;
     m_tree[offset].m_y_center = y;
     m_tree[offset].m_av_mass = m;
     m_tree[offset].hasChildren = false;
+    m_tree[offset].m_s = prof / 2.0;
 }
 
 void Particles::addBodyToNode(int offset, double x, double y, double m)
@@ -233,12 +234,13 @@ void Particles::addBodyToNode(int offset, double x, double y, double m)
     m_tree[offset].m_av_mass += m;
 }
 
-void updateOffsets(int &absolOff, int &depthOff, int &nNode, int &depth)
+void updateOffsets(int &absolOff, int &depthOff, int &nNode, int &depth, double &prev_prof)
 {
     depthOff = depthOff * 4;
     absolOff += nNode;
     nNode *= 4;
     depth += 1;
+    prev_prof = prev_prof / 2.0;
 }
 
 

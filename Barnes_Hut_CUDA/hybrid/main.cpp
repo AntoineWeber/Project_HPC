@@ -74,7 +74,9 @@ int main(int argc, char** argv)
 
     Particles allParticles(num_nodes);
 
-    //thrust::device_vector<Node> d_tree = allParticles.m_tree;
+    // allocate tree
+    Node *d_tree;
+    gpuErrchk(cudaMalloc((void**) &d_tree, num_nodes*sizeof(Node)));
 
     // copy vectors to GPU
     thrust::device_vector<double> d_x  = allParticles.m_x;
@@ -112,12 +114,16 @@ int main(int argc, char** argv)
         std::cout << "iteration " << i << std::endl;
         allParticles.resetTree(num_nodes);
         allParticles.buildTree();
-        /*d_tree = allParticles.m_tree;
-        computeDisplacements(thrust::raw_pointer_cast(&d_tree[0]), thrust::raw_pointer_cast(&d_x[0]),
+        
+        
+        gpuErrchk(cudaMemcpy(d_tree, allParticles.m_tree, num_nodes*sizeof(Node), cudaMemcpyHostToDevice));
+        computeDisplacements(d_tree, thrust::raw_pointer_cast(&d_x[0]),
                              thrust::raw_pointer_cast(&d_y[0]), thrust::raw_pointer_cast(&d_vx[0]),
                              thrust::raw_pointer_cast(&d_vy[0]), thrust::raw_pointer_cast(&d_ax[0]),
                              thrust::raw_pointer_cast(&d_ay[0]), thrust::raw_pointer_cast(&d_mass[0]), gridSize, blockSize);
-*/
+        cudaDeviceSynchronize();
+                             
+                             
         #ifdef SAVE
             allParticles.m_x = d_x;
             allParticles.m_y = d_y;

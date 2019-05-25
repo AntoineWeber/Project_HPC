@@ -43,7 +43,7 @@ CC 				=  g++
 EXTRA_NVCCFLAGS ?=
 EXTRA_LDFLAGS   ?=
 #CFLAGS = -O3 -Wall std=gnu99
-CFLAGS=-O3 -Wall -std=c++11
+CFLAGS=-O3 -Wall 
 
 # CUDA code generation flags
 #GENCODE_SM10    := -gencode arch=compute_10,code=sm_10

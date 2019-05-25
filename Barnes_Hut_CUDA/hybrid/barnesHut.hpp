@@ -22,7 +22,7 @@
 #define N_ITERATIONS 100
 #define CHILD 4
 #define G 1.0
-#define EPSILON 0.0001
+#define EPSILON 0.001
 #define MASS 1.0
 
 #define BOUNDS 7
@@ -43,17 +43,16 @@ struct BoxLimits
     int quadrant;
 };
 
-class Node
+struct Node
 {
-    public:
-        double m_av_mass;
-        double m_x_center;
-        double m_y_center;
-        double m_s;
+    double m_av_mass;
+    double m_x_center;
+    double m_y_center;
+    double m_s;
 
-        bool hasChildren;
+    bool hasChildren;
 
-        __host__ Node();
+    __host__ __device__ Node();
 };
 
 class Particles
@@ -67,14 +66,14 @@ class Particles
         thrust::host_vector<double> m_ay;
         thrust::host_vector<double> m_mass;
 
-        thrust::host_vector<Node> m_tree;
+        Node *m_tree;
 
         double m_x_min, m_x_max, m_y_min, m_y_max;
 
         void computePosition(double x, double y, BoxLimits &limits, bool updateLimits);
 
         void addBodyToNode(int offset, double x, double y, double m);
-        void createNode(int offset, double x, double y, double m);
+        void createNode(int offset, double x, double y, double m, double prof);
 
         Particles(int n_nodes);
         void resetTree(int n_nodes);
@@ -84,6 +83,6 @@ class Particles
         #endif
 };
 
-void updateOffsets(int &absolOff, int &depthOff, int &nNode, int &depth);
+void updateOffsets(int &absolOff, int &depthOff, int &nNode, int &depth, double &prev_prof);
 
 #endif

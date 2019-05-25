@@ -178,7 +178,7 @@ void Particles::buildTree()
     double end_leaf_mass, end_leaf_posx, end_leaf_posy;
 
     // reset tree after having deleted everything
-    m_tree.m_s = (double) 2*BOUNDS;
+    m_tree.m_s = (double) 2*FAR_SPACE;
     m_tree.m_children.resize(CHILD);
     for (unsigned int i=0; i<CHILD; i++)
     {
