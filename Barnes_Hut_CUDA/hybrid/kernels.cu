@@ -92,17 +92,7 @@ __global__ void compute_displacements(Node *d_tree, double* d_x, double* d_y, do
 
         else
         {
-            /*
-            double r;
-            for (int j=21; j<85; j++)
-            {
-                r = sqrt((d_tree[j].m_x_center-d_x[my_index])*(d_tree[j].m_x_center-d_x[my_index]) + (d_tree[j].m_y_center-d_y[my_index])*(d_tree[j].m_y_center-d_y[my_index]));
-                r = r>EPSILON ? r : EPSILON;
-                fx += (G*d_mass[my_index]*d_tree[j].m_av_mass*(d_tree[j].m_x_center-d_x[my_index]))/r;
-                fy += (G*d_mass[my_index]*d_tree[j].m_av_mass*(d_tree[j].m_y_center-d_y[my_index]))/r;
-            }
-            */
-            compute_branch(1, 0, 4, d_tree, d_x[my_index], d_y[my_index], d_mass[my_index], fx, fy);
+            compute_branch(1, d_tree, d_x[my_index], d_y[my_index], d_mass[my_index], fx, fy);
         }
         
         offset += stride;
@@ -126,70 +116,66 @@ __global__ void compute_displacements(Node *d_tree, double* d_x, double* d_y, do
     }
 }
 
-__device__ void compute_branch(int absOff, int depthOff, int nnode, Node *tree, double x, double y, double m, double &fx, double &fy)
+__device__ void compute_branch(int offset, Node *tree, double x, double y, double m, double &fx, double &fy)
 {
+    int childoff;
     double r, s;
     for (unsigned int i=0; i<4; i++)
     {
         // if child exists
-        if (tree[absOff + depthOff + i].m_av_mass != 0.0)
+        if (tree[offset + i].m_av_mass != 0)
         {
-            r = sqrt((tree[absOff + depthOff + i].m_x_center-x)*(tree[absOff + depthOff + i].m_x_center-x) \
-                                 + (tree[absOff + depthOff + i].m_y_center-y)*(tree[absOff + depthOff + i].m_y_center-y));
+            r = sqrt((tree[offset + i].m_x_center-x)*(tree[offset + i].m_x_center-x) \
+                                 + (tree[offset + i].m_y_center-y)*(tree[offset + i].m_y_center-y));
 
             // nan check
             if (!(r==r))
             {
                 continue;
             }
+
             // if external node, compute force with it and add it to force component
-            if (!tree[absOff + depthOff + i].hasChildren)
+            if (!tree[offset + i].hasChildren)
             {
                 if (r > EPSILON)
                 {
-                    fx += (G*m*tree[absOff + depthOff + i].m_av_mass*(tree[absOff + depthOff + i].m_x_center-x))/r;
-                    fy += (G*m*tree[absOff + depthOff + i].m_av_mass*(tree[absOff + depthOff + i].m_y_center-y))/r;
+                    fx += (G*m*tree[offset + i].m_av_mass*(tree[offset + i].m_x_center-x))/r;
+                    fy += (G*m*tree[offset + i].m_av_mass*(tree[offset + i].m_y_center-y))/r;
                 }
                 else
                 {
-                    fx += (G*m*tree[absOff + depthOff + i].m_av_mass*(tree[absOff + depthOff + i].m_x_center-x))/EPSILON;
-                    fy += (G*m*tree[absOff + depthOff + i].m_av_mass*(tree[absOff + depthOff + i].m_y_center-y))/EPSILON;
+                    fx += (G*m*tree[offset + i].m_av_mass*(tree[offset + i].m_x_center-x))/EPSILON;
+                    fy += (G*m*tree[offset + i].m_av_mass*(tree[offset + i].m_y_center-y))/EPSILON;
                 }
+                //if (threadIdx.x + blockIdx.x*blockDim.x == 0){printf("fx : %f \n", fx);}
                 
             }
             // if internal node
             else
             {
                 // compute the quotient s/r
-                s = tree[absOff + depthOff + i].m_s;
+                s = tree[offset + i].m_s;
 
                 // if too far, consider as a single body
-                //std::cout << s/r << " " << std::endl;
                 if (s / r < THETA)
                 {
-                    //std::cout << r << std::endl;
                     // still checks for EPSILON as theta could be as small as wanted.
                     if (r > EPSILON)
                     {
-                        fx += (G*m*tree[absOff + depthOff + i].m_av_mass*(tree[absOff + depthOff + i].m_x_center-x))/r;
-                        fy += (G*m*tree[absOff + depthOff + i].m_av_mass*(tree[absOff + depthOff + i].m_y_center-y))/r;
+                        fx += (G*m*tree[offset + i].m_av_mass*(tree[offset + i].m_x_center-x))/r;
+                        fy += (G*m*tree[offset + i].m_av_mass*(tree[offset + i].m_y_center-y))/r;
                     }
                     else
                     {
-                        fx += (G*m*tree[absOff + depthOff + i].m_av_mass*(tree[absOff + depthOff + i].m_x_center-x))/EPSILON;
-                        fy += (G*m*tree[absOff + depthOff + i].m_av_mass*(tree[absOff + depthOff + i].m_y_center-y))/EPSILON;
+                        fx += (G*m*tree[offset + i].m_av_mass*(tree[offset + i].m_x_center-x))/EPSILON;
+                        fy += (G*m*tree[offset + i].m_av_mass*(tree[offset + i].m_y_center-y))/EPSILON;
                     }
                 }
                 else
                 {
                     // recursive call
-                    
-
-                    absOff += nnode;
-                    nnode*=4;
-                    depthOff = (depthOff + i)*4;
-
-                    compute_branch(absOff, depthOff, nnode, tree, x, y, m, fx, fy);
+                    childoff = tree[offset+i].children;
+                    compute_branch(childoff, tree, x, y, m, fx, fy);
                 }
             }
         }

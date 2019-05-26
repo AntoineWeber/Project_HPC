@@ -52,6 +52,8 @@ struct Node
 
     bool hasChildren;
 
+    int children;
+
     __host__ Node();
 
 };
@@ -67,14 +69,14 @@ class Particles
         thrust::host_vector<double> m_ay;
         thrust::host_vector<double> m_mass;
 
-        Node *m_tree;
+        std::unique_ptr<Node[]> m_tree;
 
         double m_x_min, m_x_max, m_y_min, m_y_max;
 
         void computePosition(double x, double y, BoxLimits &limits, bool updateLimits);
 
         void addBodyToNode(int offset, double x, double y, double m);
-        void createNode(int offset, double x, double y, double m, double prof);
+        void createNode(int absOff, int depthOff, int nNode, double x, double y, double m, double prof);
 
         Particles(int n_nodes);
         void resetTree(int n_nodes);

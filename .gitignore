@@ -38,3 +38,5 @@ Barnes_Hut_CUDA/hybrid/trajectories\.txt
 Barnes_Hut_CUDA/hybrid/nbody
 
 Barnes_Hut_CUDA/hybrid/animation\.mp4
+
+Barnes_Hut_CUDA/hybrid/valgrind-out\.txt

@@ -115,21 +115,24 @@ int main(int argc, char** argv)
         allParticles.resetTree(num_nodes);
         allParticles.buildTree();
         
-        gpuErrchk(cudaMemcpy(d_tree, allParticles.m_tree, num_nodes*sizeof(Node), cudaMemcpyHostToDevice));
+        gpuErrchk(cudaMemcpy(d_tree, &allParticles.m_tree[0], num_nodes*sizeof(Node), cudaMemcpyHostToDevice));
         computeDisplacements(d_tree, thrust::raw_pointer_cast(&d_x[0]),
                              thrust::raw_pointer_cast(&d_y[0]), thrust::raw_pointer_cast(&d_vx[0]),
                              thrust::raw_pointer_cast(&d_vy[0]), thrust::raw_pointer_cast(&d_ax[0]),
                              thrust::raw_pointer_cast(&d_ay[0]), thrust::raw_pointer_cast(&d_mass[0]), gridSize, blockSize);
         cudaDeviceSynchronize();
         
+        // copy particles back to local
         allParticles.m_x = d_x;
         allParticles.m_y = d_y;
-                           
-                             
+                                                
         #ifdef SAVE
             allParticles.saveToFile(&myFile);
         #endif
     }
+
+    gpuErrchk(cudaFree(d_tree));
+
     double elapsed_compute = t1.elapsed();
 
     std::cout << "The initialisation took : " << elapsed_ini << "seconds." << std::endl;
