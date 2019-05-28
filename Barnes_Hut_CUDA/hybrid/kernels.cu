@@ -65,6 +65,48 @@ __global__ void initialize_particles_circle(double *x_pos, double *y_pos, double
 
 }
 
+__global__ void initialize_particles_2_circles(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass)
+{
+    int i = threadIdx.x + blockIdx.x*blockDim.x;
+    int stride = gridDim.x * blockDim.x;
+    int offset = 0;
+
+    // to initialize the cuda rand
+    curandState state;
+    curand_init(clock64(), i, 0, &state);
+
+    // ratio of the size of the 2 blobs
+    int size_ratio = (int)((double)curand_uniform(&state)*10);
+
+    while (i + offset < N_PARTICULES)
+    {
+        mass[i + offset] = (double)MASS;
+        double r = 1 + curand_uniform(&state)*BOUNDS;
+        double alpha = curand_uniform(&state)*2*M_PI;
+
+        if (i+offset < N_PARTICULES/size_ratio)
+        {
+            x_pos[i + offset] = BOUNDS + r*cos(alpha);
+            y_pos[i + offset] = BOUNDS + r*sin(alpha);
+        }
+        else
+        {
+            x_pos[i + offset] = -BOUNDS + r*cos(alpha);
+            y_pos[i + offset] = -BOUNDS + r*sin(alpha);
+        }
+
+        // set velocity to 0
+        x_vel[i + offset] = 0.0;
+        y_vel[i + offset] = 0.0;
+
+        // set acceleration to 0
+        x_acc[i + offset] = 0.0;
+        y_acc[i + offset] = 0.0;
+
+        offset += stride;
+    }
+}
+
 
 __global__ void compute_displacements(Node *d_tree, double* d_x, double* d_y, double* d_vx, double* d_vy, double* d_ax, double* d_ay, double* d_mass)
 {
@@ -97,7 +139,6 @@ __global__ void compute_displacements(Node *d_tree, double* d_x, double* d_y, do
         
         offset += stride;
     }
-    cudaDeviceSynchronize();
     
     offset = 0;
     while (i + offset < N_PARTICULES)

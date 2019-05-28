@@ -30,9 +30,9 @@
 #define CIRCLE_OFFSET 3
 #define FAR_SPACE 30
 
-#define N_PARTICULES 16384
-#define GRID_SIZE 128
-#define BLOCK_SIZE 128
+#define N_PARTICULES 65536
+#define GRID_SIZE 256
+#define BLOCK_SIZE 256
 
 
 #define MAX_DEPTH 10

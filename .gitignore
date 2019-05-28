@@ -40,3 +40,7 @@ Barnes_Hut_CUDA/hybrid/nbody
 Barnes_Hut_CUDA/hybrid/animation\.mp4
 
 Barnes_Hut_CUDA/hybrid/valgrind-out\.txt
+
+Sequential_CPU/Barnes_Sequential/
+
+Sequential_CPU/Barnes_CUDA/

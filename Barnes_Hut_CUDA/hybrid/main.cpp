@@ -88,7 +88,7 @@ int main(int argc, char** argv)
     thrust::device_vector<double> d_mass = allParticles.m_mass;
 
     // initialize positions of particles
-    initializeParticlesCircle(thrust::raw_pointer_cast(&d_x[0]), thrust::raw_pointer_cast(&d_y[0]), 
+    initializeParticles2Circles(thrust::raw_pointer_cast(&d_x[0]), thrust::raw_pointer_cast(&d_y[0]), 
                               thrust::raw_pointer_cast(&d_vx[0]), thrust::raw_pointer_cast(&d_vy[0]),
                               thrust::raw_pointer_cast(&d_ax[0]), thrust::raw_pointer_cast(&d_ay[0]), 
                               thrust::raw_pointer_cast(&d_mass[0]), gridSize, blockSize);
@@ -111,7 +111,7 @@ int main(int argc, char** argv)
     t1.reset();
     for (unsigned int i=0; i<N_ITERATIONS; i++)
     {
-        std::cout << "iteration " << i << std::endl;
+        //std::cout << "iteration " << i << std::endl;
         allParticles.resetTree(num_nodes);
         allParticles.buildTree();
         

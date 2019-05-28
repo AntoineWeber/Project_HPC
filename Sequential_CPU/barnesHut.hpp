@@ -8,14 +8,14 @@
 #include <limits>
 #include <cmath>
 
-#define SAVE true
+//#define SAVE true
 
 #define THETA 0.5
 #define N_ITERATIONS 100
-#define N_PARTICULES 16384
+#define N_PARTICULES 1048576
 #define CHILD 4
 #define G 1.0
-#define EPSILON 0.0001
+#define EPSILON 0.001
 #define MASS 1.0
 
 #define BOUNDS 7
