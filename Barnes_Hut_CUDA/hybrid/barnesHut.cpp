@@ -106,11 +106,6 @@ void Particles::buildTree()
         // descend along the tree until found the right branch
         while(!done)
         {
-            if (depth == MAX_DEPTH-1)
-            {
-                break;
-            }
-
             //locate the particle
             computePosition(m_x[i], m_y[i], limits, true);
             quadrant = limits.quadrant;
@@ -166,7 +161,8 @@ void Particles::buildTree()
                         if (depth == MAX_DEPTH-1)
                         {
                             // add particule before quitting
-                            addBodyToNode(absoluteOffset + depthOffset + quadrant_internal_node,  m_x[i], m_y[i], m_mass[i]);
+                            addBodyToNode(absoluteOffset + depthOffset,  m_x[i], m_y[i], m_mass[i]);
+                            done = true;
                             break;
                         }
                         computePosition(m_x[i], m_y[i], limits, false);
