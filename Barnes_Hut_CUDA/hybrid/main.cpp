@@ -143,7 +143,7 @@ int main(int argc, char** argv)
     std::cout << "While the computation of the " << N_ITERATIONS << " steps took " << elapsed_compute << "seconds." << std::endl;
     std::cout << "with " << N_PARTICULES << " particles." << std::endl;
 
-    return 1;
+    return 0;
 }
 
 
