@@ -5,12 +5,12 @@
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --qos=gpu_free
-#SBATCH --reservation=phpc2019gpu
+##SBATCH --reservation=phpc2019gpu
 source /ssoft/spack/bin/slmodules.sh -s  x86_E5v2_Mellanox_GPU
 
 module load gcc cuda
 
 module list
 
-srun nvprof ./nbrute -D
+srun nvprof ./nbody -D
 

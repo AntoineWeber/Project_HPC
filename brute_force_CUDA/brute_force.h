@@ -4,9 +4,9 @@
 
 //#define SAVE true
 
-#define N_PARTICLES 16384
-#define GRID_SIZE 256
-#define BLOCK_SIZE 256
+#define N_PARTICLES 65536
+#define GRID_SIZE 128
+#define BLOCK_SIZE 128
 
 #define GRID_MAX 5
 #define GRID_MIN -GRID_MAX

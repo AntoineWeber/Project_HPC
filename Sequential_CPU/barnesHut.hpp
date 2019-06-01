@@ -12,7 +12,7 @@
 
 #define THETA 0.5
 #define N_ITERATIONS 100
-#define N_PARTICULES 1048576
+#define N_PARTICULES 65536
 #define CHILD 4
 #define G 1.0
 #define EPSILON 0.001

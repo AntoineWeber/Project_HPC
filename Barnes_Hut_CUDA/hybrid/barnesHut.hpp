@@ -16,7 +16,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
-#define SAVE true
+//#define SAVE true
 
 #define THETA 0.5
 #define N_ITERATIONS 100
@@ -30,9 +30,9 @@
 #define CIRCLE_OFFSET 3
 #define FAR_SPACE 30
 
-#define N_PARTICULES 65536
-#define GRID_SIZE 256
-#define BLOCK_SIZE 256
+#define N_PARTICULES 1048576
+#define GRID_SIZE 128
+#define BLOCK_SIZE 128
 
 
 #define MAX_DEPTH 10
