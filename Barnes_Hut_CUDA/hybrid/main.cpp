@@ -88,7 +88,7 @@ int main(int argc, char** argv)
     thrust::device_vector<double> d_mass = allParticles.m_mass;
 
     // initialize positions of particles
-    initializeParticles2Circles(thrust::raw_pointer_cast(&d_x[0]), thrust::raw_pointer_cast(&d_y[0]), 
+    initializeParticlesCircle(thrust::raw_pointer_cast(&d_x[0]), thrust::raw_pointer_cast(&d_y[0]), 
                               thrust::raw_pointer_cast(&d_vx[0]), thrust::raw_pointer_cast(&d_vy[0]),
                               thrust::raw_pointer_cast(&d_ax[0]), thrust::raw_pointer_cast(&d_ay[0]), 
                               thrust::raw_pointer_cast(&d_mass[0]), gridSize, blockSize);
