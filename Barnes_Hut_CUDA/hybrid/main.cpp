@@ -131,7 +131,11 @@ int main(int argc, char** argv)
         #endif
     }
 
-    gpuErrchk(cudaFree(d_tree));
+    if (d_tree != nullptr)
+    {
+        gpuErrchk(cudaFree(d_tree));
+        d_tree = nullptr;
+    }
 
     double elapsed_compute = t1.elapsed();
 
