@@ -158,6 +158,8 @@ void initiateDevice()
 
 
     error = cudaGetDeviceProperties(&deviceProp, devID);
+    std::cout << "Memory bus width : " << deviceProp.memoryBusWidth << std::endl;
+    std::cout << "Memory clock rate : " << deviceProp.memoryClockRate << std::endl;
 
     if (deviceProp.computeMode == cudaComputeModeProhibited)
     {
