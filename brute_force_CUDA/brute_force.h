@@ -2,6 +2,9 @@
 #ifndef _BRUTE_FORCE_H_
 #define _BRUTE_FORCE_H_
 
+// uncomment to save the position of the particles in a txt file at each
+// iteration.
+
 //#define SAVE true
 
 #define N_PARTICLES 65536
@@ -31,6 +34,7 @@
 #include <string.h>
 #include <math.h>
 
+// timer class
 class Timer
 {
 public:

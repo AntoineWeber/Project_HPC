@@ -7,7 +7,7 @@
 #include "kernels.cuh"
 #include "brute_force.h"
 
-
+// Function to initialize the particles in a square with uniform distribution
 __global__ void initialize_particles_uni(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass)
 {
     int i = threadIdx.x + blockIdx.x*blockDim.x;
@@ -36,7 +36,7 @@ __global__ void initialize_particles_uni(double *x_pos, double *y_pos, double *x
         offset += stride;
     }
 }
-
+// Function to initialize the particles in a holed circle
 __global__ void initialize_particles_circle(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass)
 {
     int i = threadIdx.x + blockIdx.x*blockDim.x;
@@ -71,7 +71,7 @@ __global__ void initialize_particles_circle(double *x_pos, double *y_pos, double
 }
 
 
-
+// Kernel computing the force and displacement per particle
 __global__ void compute_forces(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass)
 {
     int i = threadIdx.x + blockIdx.x*blockDim.x;

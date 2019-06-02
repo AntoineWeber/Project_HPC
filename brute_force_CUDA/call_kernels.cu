@@ -5,6 +5,7 @@
 #include "kernels.cuh"
 #include "brute_force.h"
 
+// File used to call the cuda kernels from the C++ file.
 
 void initializeParticlesUni(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass, dim3 gridSize, dim3 blockSize)
 {

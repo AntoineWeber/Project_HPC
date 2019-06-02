@@ -10,7 +10,7 @@
 
 #include "barnesHut.hpp"
 
-
+// timer class
 class Timer
 {
 public:
@@ -39,6 +39,7 @@ int main(int argc, char** argv)
         std::ofstream myFile("trajectories.txt");
     #endif
 
+    // Initialize particles
     t1.reset();
     Particles allParticles;
     allParticles.initialize("circle");
@@ -49,17 +50,22 @@ int main(int argc, char** argv)
     #endif
 
     t1.reset();
+    // loop ITERATIONS time
     for (unsigned int i=0; i<N_ITERATIONS; i++)
     {
         std::cout << "iteration " << i << std::endl;
+        // clear tree
         allParticles.resetTree();
+        // build it
         allParticles.buildTree();
+        // compute force and displacement
         allParticles.computeDisplacement();
         #ifdef SAVE
             allParticles.saveToFile(&myFile);
         #endif
     }
     double elapsed_compute = t1.elapsed();
+    // clean tree one last time
     allParticles.resetTree();
 
     std::cout << "The initialisation took : " << elapsed_ini << "seconds." << std::endl;

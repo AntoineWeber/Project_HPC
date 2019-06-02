@@ -56,8 +56,7 @@ Particles::Particles()
 }
 
 /**
-Method used to initialize the particles : thus far only uniform
-distribution is implemented.
+Method used to initialize the particles.
 */
 void Particles::initialize(std::string pattern)
 {
@@ -104,7 +103,7 @@ void Particles::initialize(std::string pattern)
             }
             else
             {
-                */
+            */
             r = radius(generator);
             theta = angle(generator);
 
@@ -177,7 +176,7 @@ void Particles::buildTree()
 
     double end_leaf_mass, end_leaf_posx, end_leaf_posy;
 
-    // reset tree after having deleted everything
+    // reset root after having cleaned the tree.
     m_tree.m_s = (double) 2*FAR_SPACE;
     m_tree.m_children.resize(CHILD);
     for (unsigned int i=0; i<CHILD; i++)
@@ -235,8 +234,6 @@ void Particles::buildTree()
                     end_leaf_posx = curr_node->m_children[quadrant]->m_x_center;
                     end_leaf_posy = curr_node->m_children[quadrant]->m_y_center;
 
-                    // if tree not destroyed properly, without the forcing computation,
-                    // can get stuck in an infinite loop here trying to separate the same particle.
                     // if really not lucky, the randomization may have created twice the same particle.
                     if (end_leaf_posx == m_x[i] && end_leaf_posy == m_y[i])
                     {
@@ -246,6 +243,7 @@ void Particles::buildTree()
 
                     while(!constructInternalNode)
                     {
+                        // compute the quadrants of the considered particle and external node
                         computePosition(m_x[i], m_y[i], limits, false);
                         quadrant_internal_point = limits.quadrant;
                         computePosition(end_leaf_posx, end_leaf_posy, limits, false);
@@ -264,9 +262,10 @@ void Particles::buildTree()
                         } 
                         else
                         {
-                            curr_node->m_children[quadrant]->addBodyToNode(m_mass[i], m_x[i], m_y[i]);
                             // else create internal nodes until they go to different quadrants.
-                            // need to call this function to cut the space in 4
+                            curr_node->m_children[quadrant]->addBodyToNode(m_mass[i], m_x[i], m_y[i]);
+
+                            // recall this function to cut the space in 4
                             computePosition(end_leaf_posx, end_leaf_posy, limits, true);
                             quadrant_internal_point = limits.quadrant;
                             curr_node->m_children[quadrant]->createNode(quadrant_internal_point, end_leaf_mass, end_leaf_posx, end_leaf_posy,
@@ -282,7 +281,7 @@ void Particles::buildTree()
 }
 
 /**
-Method used to create a node when none exists in the tree
+Method used to create a node when none exists 
 */
 void QuadTree::createNode(int quadrant, double mass, double x, double y, double prof)
 {
@@ -291,7 +290,6 @@ void QuadTree::createNode(int quadrant, double mass, double x, double y, double 
     m_children[quadrant]->m_x_center = x;
     m_children[quadrant]->m_y_center = y;
     m_children[quadrant]->m_s = prof / 2.0;
-    //std::cout << m_children[quadrant]->m_s << std::endl;
 }
 
 /**
@@ -440,10 +438,8 @@ void QuadTree::computeBranchesComponent(double x, double y, double m, double &fx
                 s = m_children[i]->m_s;
 
                 // if too far, consider as a single body
-                //std::cout << s/r << " " << std::endl;
                 if (s / r < THETA)
                 {
-                    //std::cout << r << std::endl;
                     // still checks for EPSILON as theta could be as small as wanted.
                     if (r > EPSILON)
                     {
@@ -458,7 +454,7 @@ void QuadTree::computeBranchesComponent(double x, double y, double m, double &fx
                 }
                 else
                 {
-                    // recursive call
+                    // if close enough, recursive call
                     m_children[i]->computeBranchesComponent(x,y,m,fx,fy);
                 }
             }

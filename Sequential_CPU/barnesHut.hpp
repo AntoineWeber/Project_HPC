@@ -8,6 +8,7 @@
 #include <limits>
 #include <cmath>
 
+// uncomment to save position of particles at each iterations in a txt file
 //#define SAVE true
 
 #define THETA 0.5
@@ -29,6 +30,7 @@ struct BoxLimits
     int quadrant;
 };
 
+// class representing each tree's node
 class QuadTree
 {
     public:
@@ -50,6 +52,7 @@ class QuadTree
 
 };
 
+// class representing all the particles
 class Particles
 {
     private:

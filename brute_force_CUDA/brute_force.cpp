@@ -31,7 +31,7 @@ int main(int argc, char** argv)
     initiateDevice();
 
     // allocate memory for the particle array
-    unsigned int size_particles = N_PARTICLES; // plane coordinates
+    unsigned int size_particles = N_PARTICLES;
     unsigned int mem_size_particles = sizeof(double) * size_particles;
 
     double* d_pos_x;
@@ -50,6 +50,7 @@ int main(int argc, char** argv)
     gpuErrchk(cudaMalloc((void**) &d_acc_y, mem_size_particles));
     gpuErrchk(cudaMalloc((void**) &d_mass, mem_size_particles));
 
+    // initialize particles
     //initializeParticlesUni(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
     initializeParticlesCircle(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
 
@@ -75,8 +76,10 @@ int main(int argc, char** argv)
     double elapsed_ini = t1.elapsed();
     t1.reset();
 
+    // iterate ITERATIONS time
     for (unsigned int iter=0; iter<ITERATIONS; iter++)
     {
+        // compute forces
         computeForces(d_pos_x, d_pos_y, d_vel_x, d_vel_y, d_acc_x, d_acc_y, d_mass, gridSize, blockSize);
         cudaDeviceSynchronize();
         #ifdef SAVE
@@ -100,14 +103,7 @@ int main(int argc, char** argv)
     std::cout << "computing " << ITERATIONS << " steps with " << N_PARTICLES << " particles." <<std::endl;
     std::cout << std::endl;
 
-    /*
-    for (unsigned int j=0; j<N_PARTICLES; j++)
-    {
-        std::cout << h_pos_x[j] << " ";
-    }
-    std::cout << std::endl;
-    */
-
+    // free memory
     gpuErrchk(cudaFree(d_pos_x));
     gpuErrchk(cudaFree(d_pos_y));
     gpuErrchk(cudaFree(d_vel_x));
@@ -119,6 +115,7 @@ int main(int argc, char** argv)
     exit(EXIT_SUCCESS);
 }
 
+// function checking if GPU can be used
 void initiateDevice()
 {
     // By default, we use device 0, otherwise we override the device ID based on what is provided at the command line
