@@ -16,6 +16,8 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
+// Uncomment to save the position of all particles for each iteration in a txt file
+
 //#define SAVE true
 
 #define THETA 0.5
@@ -30,7 +32,8 @@
 #define CIRCLE_OFFSET 3
 #define FAR_SPACE 30
 
-#define N_PARTICULES 1048576
+// Can be tuned
+#define N_PARTICULES 65536
 #define GRID_SIZE 128
 #define BLOCK_SIZE 128
 
@@ -45,19 +48,25 @@ struct BoxLimits
 
 struct Node
 {
+    // center of mass of the node and all underlying nodes
     double m_av_mass;
     double m_x_center;
     double m_y_center;
+
+    // size in space of the space of the current quadtree
     double m_s;
 
+    // boolean stating if the current node has children
     bool hasChildren;
 
+    // children represent the offset for the children of the current node
     int children;
 
     __host__ Node();
 
 };
 
+// Class representing all particles
 class Particles
 {
     public:
@@ -73,8 +82,8 @@ class Particles
 
         double m_x_min, m_x_max, m_y_min, m_y_max;
 
-        void computePosition(double x, double y, BoxLimits &limits, bool updateLimits);
 
+        void computePosition(double x, double y, BoxLimits &limits, bool updateLimits);
         void addBodyToNode(int offset, double x, double y, double m);
         void createNode(int absOff, int depthOff, int nNode, double x, double y, double m, double prof);
 

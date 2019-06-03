@@ -46,3 +46,7 @@ Sequential_CPU/Barnes_Sequential/
 Sequential_CPU/Barnes_CUDA/
 
 brute_force_CUDA/nbody
+
+Barnes_Hut_CUDA/animation\.mp4
+
+Barnes_Hut_CUDA/valgrind-out\.txt

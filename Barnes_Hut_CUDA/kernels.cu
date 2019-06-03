@@ -3,6 +3,7 @@
 #include "kernels.cuh"
 
 
+// Function initializing the particles in a square, with uniform distribution
 __global__ void initialize_particles_uni(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass)
 {
     int i = threadIdx.x + blockIdx.x*blockDim.x;
@@ -32,6 +33,7 @@ __global__ void initialize_particles_uni(double *x_pos, double *y_pos, double *x
     }
 }
 
+// Function initializing the particles in a holed circle
 __global__ void initialize_particles_circle(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass)
 {
     int i = threadIdx.x + blockIdx.x*blockDim.x;
@@ -65,6 +67,7 @@ __global__ void initialize_particles_circle(double *x_pos, double *y_pos, double
 
 }
 
+// Function initializing the particles in two holed circles, with a random ratio between the densities.
 __global__ void initialize_particles_2_circles(double *x_pos, double *y_pos, double *x_vel, double *y_vel, double *x_acc, double *y_acc, double *mass)
 {
     int i = threadIdx.x + blockIdx.x*blockDim.x;
@@ -108,6 +111,7 @@ __global__ void initialize_particles_2_circles(double *x_pos, double *y_pos, dou
 }
 
 
+// Function computing the particle displacement using the tree computed by the host
 __global__ void compute_displacements(Node *d_tree, double* d_x, double* d_y, double* d_vx, double* d_vy, double* d_ax, double* d_ay, double* d_mass)
 {
     int i = threadIdx.x + blockIdx.x*blockDim.x;
@@ -134,8 +138,13 @@ __global__ void compute_displacements(Node *d_tree, double* d_x, double* d_y, do
 
         else
         {
+            // compute force using a recursive kernel
             compute_branch(1, d_tree, d_x[my_index], d_y[my_index], d_mass[my_index], fx, fy);
         }
+
+        // compute acceleration
+        d_ax[my_index] = fx / d_mass[my_index];
+        d_ay[my_index] = fy / d_mass[my_index];
         
         offset += stride;
     }
@@ -144,8 +153,6 @@ __global__ void compute_displacements(Node *d_tree, double* d_x, double* d_y, do
     while (i + offset < N_PARTICULES)
     {
         my_index = i+offset;
-        d_ax[my_index] = fx / d_mass[my_index];
-        d_ay[my_index] = fy / d_mass[my_index];
 
         d_vx[my_index] += d_ax[my_index]*TIMESTEP;
         d_vy[my_index] += d_ay[my_index]*TIMESTEP;
@@ -157,10 +164,12 @@ __global__ void compute_displacements(Node *d_tree, double* d_x, double* d_y, do
     }
 }
 
+// Recursive kernel to go through the tree
 __device__ void compute_branch(int offset, Node *tree, double x, double y, double m, double &fx, double &fy)
 {
     int childoff;
     double r, s;
+    // loop on all children using offsets
     for (unsigned int i=0; i<4; i++)
     {
         // if child exists
@@ -188,7 +197,6 @@ __device__ void compute_branch(int offset, Node *tree, double x, double y, doubl
                     fx += (G*m*tree[offset + i].m_av_mass*(tree[offset + i].m_x_center-x))/EPSILON;
                     fy += (G*m*tree[offset + i].m_av_mass*(tree[offset + i].m_y_center-y))/EPSILON;
                 }
-                //if (threadIdx.x + blockIdx.x*blockDim.x == 0){printf("fx : %f \n", fx);}
                 
             }
             // if internal node
@@ -215,6 +223,7 @@ __device__ void compute_branch(int offset, Node *tree, double x, double y, doubl
                 else
                 {
                     // recursive call
+                    // update the offset using the attribute children of the tree
                     childoff = tree[offset+i].children;
                     compute_branch(childoff, tree, x, y, m, fx, fy);
                 }

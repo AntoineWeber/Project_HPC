@@ -3,8 +3,7 @@
 
 
 /**
-Constructor of the class Quadtree. Initialize every value to 0 and the pointers to the 4 quadrants to
-null.
+Constructor of the class Quadtree. Initialize every value to 0
 */
 __host__ Node::Node()
 {
@@ -39,7 +38,7 @@ Particles::Particles(int n_nodes)
 }
 
 /**
-To call the quadtree reset from the particle class.
+Method to clean the tree and allocate a new one
 */
 void Particles::resetTree(int n_nodes)
 {
@@ -72,6 +71,7 @@ void Particles::buildTree()
 
     BoxLimits limits;
 
+    // loop on all particles
     for(unsigned int i=0; i<N_PARTICULES; i++)
     {
         // if particle in the far space
@@ -96,10 +96,14 @@ void Particles::buildTree()
         {
             addBodyToNode(0, m_x[i], m_y[i], m_mass[i]);
         }
-        
+
         prev_prof = m_tree[0].m_s;
         depth = 1;
         done = false;
+        // absolute offset is the offset to the first particle for a given depth
+        // depth offset is the offset the the beginning of the four quadrants, from the absolute offset
+        // finally quadrant is the quadrant, being an integer between 0 and 3
+        // nDeptNode is the number of nodes for the given depth
         depthOffset = 0;
         absoluteOffset = 1;
         nDepthNode = 4;
@@ -130,6 +134,7 @@ void Particles::buildTree()
             // if already exists, go deeper down the tree
             else
             {
+                // if child exists and already have children
                 if (m_tree[absoluteOffset + depthOffset].hasChildren == true)
                 {
                     // add the point to the node
@@ -147,8 +152,7 @@ void Particles::buildTree()
                     end_leaf_mass = m_tree[absoluteOffset + depthOffset].m_av_mass;
                     end_leaf_posx = m_tree[absoluteOffset + depthOffset].m_x_center;
                     end_leaf_posy = m_tree[absoluteOffset + depthOffset].m_y_center;
-                    // if tree not destroyed properly, without the forcing computation,
-                    // can get stuck in an infinite loop here trying to separate the same particle.
+
                     // if really not lucky, the randomization may have created twice the same particle.
                     if (end_leaf_posx == m_x[i] && end_leaf_posy == m_y[i])
                     {
@@ -158,6 +162,7 @@ void Particles::buildTree()
 
                     while(!constructInternalNode)
                     {
+                        // if arrived at the max depth, add particle to last layer and leave
                         if (depth == MAX_DEPTH-1)
                         {
                             // add particule before quitting
@@ -165,6 +170,7 @@ void Particles::buildTree()
                             done = true;
                             break;
                         }
+                        // locate both the external node and the current particle
                         computePosition(m_x[i], m_y[i], limits, false);
                         quadrant_internal_point = limits.quadrant;
                         computePosition(end_leaf_posx, end_leaf_posy, limits, false);
@@ -188,11 +194,13 @@ void Particles::buildTree()
                         } 
                         else
                         {
+                            // If both particle and external node go deeper in the same quadrant, iterate until they 
+                            // go to different quadrants.
+
                             // add the point to the parent node
                             addBodyToNode(absoluteOffset+depthOffset, m_x[i], m_y[i], m_mass[i]);
                             m_tree[absoluteOffset+depthOffset].hasChildren = true;
 
-                            // else create internal nodes until they go to different quadrants.
                             // need to call this function to cut the space in 4
                             computePosition(end_leaf_posx, end_leaf_posy, limits, true);
                             quadrant_internal_node = limits.quadrant;
@@ -212,17 +220,26 @@ void Particles::buildTree()
     }
 }
 
+/**
+ * Method to create a node when no particle is already on it
+ */
 void Particles::createNode(int absOff, int depthOff, int nNode, double x, double y, double m, double prof)
 {
     m_tree[absOff + depthOff].m_x_center = x;
     m_tree[absOff + depthOff].m_y_center = y;
     m_tree[absOff + depthOff].m_av_mass = m;
     m_tree[absOff + depthOff].hasChildren = false;
+    // m_s represents the size of the current quadtree. To be used when computing the
+    // ratio s/r to determine if the node is far enough in the compute force part.
     m_tree[absOff + depthOff].m_s = prof / 2.0;
 
+    // offset to the 4 children of the node
     m_tree[absOff + depthOff].children = absOff+nNode + depthOff*4;
 }
-
+/**
+ * Method to add a particle on an already existing node.
+ * Updates the center of mass and the total mass
+ */
 void Particles::addBodyToNode(int offset, double x, double y, double m)
 {
     m_tree[offset].m_x_center += x * m / m_tree[offset].m_av_mass;
@@ -234,6 +251,11 @@ void Particles::addBodyToNode(int offset, double x, double y, double m)
     m_tree[offset].m_av_mass += m;
 }
 
+/**
+ * Function updating the offsets. The purpose of this function is to bring the offsets
+ * to the beginning of the children of the considered node.
+ * It also updates the depth, the number of nodes on this depth and the size of the space of the quadtrees for this depth
+ */
 void updateOffsets(int &absolOff, int &depthOff, int &nNode, int &depth, double &prev_prof)
 {
     depthOff = depthOff * 4;
@@ -305,6 +327,8 @@ void Particles::computePosition(double x, double y, BoxLimits &limits, bool upda
     }
     else
     {
+        // If particle not within the space hence in the far space. This
+        // method should never be called for such particles.
         std::cout << "Should not happen" << std::endl;
         std::cout << "x is " << x << " and y is " << y <<std::endl;
         std::cout << "limits are : up : " << limits.top << " down : " << limits.bottom << std::endl;

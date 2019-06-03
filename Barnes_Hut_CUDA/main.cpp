@@ -18,6 +18,7 @@
 
 void initiateDevice();
 
+// Timer class
 class Timer
 {
 public:
@@ -54,6 +55,7 @@ int main(int argc, char** argv)
 
     initiateDevice();
 
+    // set grid and block size
     dim3 gridSize(GRID_SIZE);
     dim3 blockSize(BLOCK_SIZE);
 
@@ -65,6 +67,8 @@ int main(int argc, char** argv)
 
     t1.reset();
 
+    // compute the number of nodes in the tree considering 
+    // MAX_DEPTH layers (starts at 0)
     int num_nodes = 0;
     for (unsigned int i = 0; i<MAX_DEPTH; i++)
     {
@@ -72,9 +76,10 @@ int main(int argc, char** argv)
     }
     std::cout << "generating " << num_nodes << " nodes." << std::endl;
 
+    // needs num_nodes to allocate the host fixed-size tree
     Particles allParticles(num_nodes);
 
-    // allocate tree
+    // allocate tree for device
     Node *d_tree;
     gpuErrchk(cudaMalloc((void**) &d_tree, num_nodes*sizeof(Node)));
 
@@ -111,18 +116,21 @@ int main(int argc, char** argv)
     t1.reset();
     for (unsigned int i=0; i<N_ITERATIONS; i++)
     {
-        //std::cout << "iteration " << i << std::endl;
+        // Clean the tree and allocate another one
         allParticles.resetTree(num_nodes);
+        // Build the tree locally
         allParticles.buildTree();
-        
+        // Copy the tree to device
         gpuErrchk(cudaMemcpy(d_tree, &allParticles.m_tree[0], num_nodes*sizeof(Node), cudaMemcpyHostToDevice));
+        // Compute displacement
         computeDisplacements(d_tree, thrust::raw_pointer_cast(&d_x[0]),
                              thrust::raw_pointer_cast(&d_y[0]), thrust::raw_pointer_cast(&d_vx[0]),
                              thrust::raw_pointer_cast(&d_vy[0]), thrust::raw_pointer_cast(&d_ax[0]),
                              thrust::raw_pointer_cast(&d_ay[0]), thrust::raw_pointer_cast(&d_mass[0]), gridSize, blockSize);
+        // synchronize before new loop
         cudaDeviceSynchronize();
         
-        // copy particles back to local
+        // copy particles position back to local to update tree
         allParticles.m_x = d_x;
         allParticles.m_y = d_y;
                                                 
@@ -131,6 +139,7 @@ int main(int argc, char** argv)
         #endif
     }
 
+    // free pointer for device tree
     if (d_tree != nullptr)
     {
         gpuErrchk(cudaFree(d_tree));
@@ -147,6 +156,7 @@ int main(int argc, char** argv)
 }
 
 
+// Function checking if the GPU can be used for computation
 void initiateDevice()
 {
     // By default, we use device 0, otherwise we override the device ID based on what is provided at the command line
