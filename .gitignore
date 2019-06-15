@@ -8,6 +8,8 @@
 *.ipynb_checkpoints
 *.cmake
 *.exe
+*.png
+*.DS_Store
 
 CMakeFiles
 CMakeCache.txt
